@@ -39,6 +39,16 @@ mots-clés ne sont pas sensibles à la casse) :
 **Remarque** pour l'instant pas de tests de variables libres sur les règles de
 pour tout et il existe.
 
+## Unicode
+
+Par défaut, les caractères sont affichés en unicode. On peut lancer
+le programme avec `-ascii` comme option pour forcer l'affiche en ascii.
+
+La saisie des symboles peut également se faire :
+
+* soit avec les symboles unicodes : `∧, ∨...`
+* soit avec les commandes `LaTeX` : `\land, \lor...`
+
 ## Exemple de déroulé
 
 ### Preuve de `A /\ B -> B /\ A`
