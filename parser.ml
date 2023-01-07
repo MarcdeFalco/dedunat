@@ -14,6 +14,7 @@ let keywords = [
 ]
 
 exception LexingError
+exception Quit
 
 let is_alpha c =
     let n  = Char.code c in
@@ -52,13 +53,14 @@ let rec lexer s =
     | '.'::q -> Dot :: lexer q
     | '('::q -> LPar :: lexer q
     | ')'::q -> RPar :: lexer q
-    | '\\'::'/'::q -> TOr :: lexer q
-    | '/'::'\\'::q -> TAnd :: lexer q
-    | '-'::'>'::q -> TImplies :: lexer q
-    | '~'::q -> TNot :: lexer q
-    | '\\'::'-'::'/'::q -> TForall :: lexer q
-    | '-'::')'::q -> TExists :: lexer q
-    | '_' :: '|' :: '_' :: q -> TAbsurd :: lexer q
+    | '\\'::'/'::q | '\\' :: 'l' :: 'o' :: 'r' :: q-> TOr :: lexer q
+    | '/'::'\\'::q | '\\' :: 'l' :: 'a' :: 'n' :: 'd' :: q -> TAnd :: lexer q
+    | '-'::'>'::q | '\\' :: 't' :: 'o' :: q -> TImplies :: lexer q
+    | '~'::q | '\\' :: 'n' :: 'e' :: 'g' :: q-> TNot :: lexer q
+    | '\\'::'-'::'/'::q | '\\' :: 'f' :: 'o' :: 'r' :: 'a':: 'l' :: 'l' :: q -> TForall :: lexer q
+    | '-'::')'::q | '\\' :: 'e' :: 'x' :: 'i' :: 's' :: 't' :: 's' :: q -> TExists :: lexer q
+    | '_' :: '|' :: '_' :: q | '\\' :: 'b' :: 'o' :: 't' :: q -> TAbsurd :: lexer q
+    | '\\' :: 'q' :: 'u' :: 'i' :: 't' :: _ -> raise Quit
     | x :: _ when is_digit x ->
         let x, q = extract_num s in
         if x = []
