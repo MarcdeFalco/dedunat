@@ -14,7 +14,6 @@ let keywords = [
 ]
 
 exception LexingError
-exception Quit
 
 let is_alpha c =
     let n  = Char.code c in
@@ -60,7 +59,6 @@ let rec lexer s =
     | '\\'::'-'::'/'::q | '\\' :: 'f' :: 'o' :: 'r' :: 'a':: 'l' :: 'l' :: q -> TForall :: lexer q
     | '-'::')'::q | '\\' :: 'e' :: 'x' :: 'i' :: 's' :: 't' :: 's' :: q -> TExists :: lexer q
     | '_' :: '|' :: '_' :: q | '\\' :: 'b' :: 'o' :: 't' :: q -> TAbsurd :: lexer q
-    | '\\' :: 'q' :: 'u' :: 'i' :: 't' :: _ -> raise Quit
     | x :: _ when is_digit x ->
         let x, q = extract_num s in
         if x = []
