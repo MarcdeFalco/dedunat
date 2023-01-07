@@ -5,13 +5,55 @@ type term =
 type formula =
     | PropVar of string
     | Rel of string * term list
+    | Implies of formula * formula
     | Or of formula * formula
     | And of formula * formula
     | Not of formula
-    | Implies of formula * formula
     | Forall of string * formula
     | Exists of string * formula
     | Absurd
+
+let rec subst_term x tx t =
+    match t with
+    | Var y -> if x = y then tx else t
+    | Function(f, tl) -> Function(f, List.map (subst_term x tx) tl)
+
+let rec subst x t f =
+    match f with
+
+    | And(f1,f2) -> And(subst x t f1, subst x t f2)
+    | Or(f1,f2) -> Or(subst x t f1, subst x t f2)
+    | Implies(f1,f2) -> Implies(subst x t f1, subst x t f2)
+    | Not f -> Not (subst x t f)
+
+    | Forall(y, f) -> Forall(y, if x = y then f else subst x t f)
+    | Exists(y, f) -> Exists(y, if x = y then f else subst x t f)
+
+    | Rel(r, tl) -> Rel(r, List.map (subst_term x t) tl)
+
+    | _ -> f
+
+let rec rev_subst_term x tx t =
+    if t = tx
+    then Var x
+    else match t with
+        | Var y -> Var y
+        | Function(f, tl) -> Function(f, List.map (rev_subst_term x tx) tl)
+
+let rec rev_subst x t f =
+    match f with
+
+    | And(f1,f2) -> And(rev_subst x t f1, rev_subst x t f2)
+    | Or(f1,f2) -> Or(rev_subst x t f1, rev_subst x t f2)
+    | Implies(f1,f2) -> Implies(rev_subst x t f1, rev_subst x t f2)
+    | Not f -> Not (rev_subst x t f)
+
+    | Forall(y, f) -> Forall(y, if x = y then f else rev_subst x t f)
+    | Exists(y, f) -> Exists(y, if x = y then f else rev_subst x t f)
+
+    | Rel(r, tl) -> Rel(r, List.map (rev_subst_term x t) tl)
+
+    | _ -> f
 
 let rec string_of_term t =
     match t with
@@ -62,7 +104,7 @@ let rec string_of_formula f =
     | Not f -> "~"^aux f
     | Absurd -> "_|_"
     | Forall(x,f) -> "\\-/"^x^". "^string_of_formula f
-    | Exists(x,f) -> "-)"^x^". "^string_of_formula f
+    | Exists(x,f) -> "-]"^x^". "^string_of_formula f
 
 let pretty_print f =
     print_string (string_of_formula f);

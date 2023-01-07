@@ -6,17 +6,24 @@ type rule =
     | ElimAnd of bool * formula
     | ElimNot of formula
     | ElimAbsurd
+    | ElimForall of string * term
+    | ElimExists of string * formula
 
     | IntroImplies
     | IntroOr of bool
     | IntroAnd
     | IntroNot
+    | IntroForall of string
+    | IntroExists of term
 
     | Axiom
 
     | Unfinished
 
 type sequent = formula list * formula
+
+let subst_sequent x t (fl, f) =
+    (List.map (subst x t) fl, subst x t f)
 
 type proof = Inference of sequent * proof list * rule
 type context = sequent list * (proof list -> proof)
@@ -80,6 +87,12 @@ let string_of_proof p =
         | ElimNot _ -> "~e"
         | IntroNot -> "~i"
 
+        | IntroForall _ -> "\\-/i"
+        | ElimForall _  -> "\\-/e"
+
+        | IntroExists _ -> "-]i"
+        | ElimExists _  -> "-]e"
+
         | ElimAbsurd -> "_|_e"
 
         | Axiom -> "ax"
@@ -114,6 +127,12 @@ let latex_of_proof p =
 
         | ElimNot _ -> "\\neg_e"
         | IntroNot -> "\\neg_i"
+
+        | IntroForall _ -> "\\forall_i"
+        | ElimForall _  -> "\\forall_e"
+
+        | IntroExists _ -> "\\exists_i"
+        | ElimExists _  -> "\\exists_e"
 
         | ElimAbsurd -> "\\perp_e"
 
@@ -176,6 +195,17 @@ let apply_rule_to_goal r g =
         [(f :: gamma, Absurd)], build_inference 1
     | ElimNot f, (gamma, Absurd) ->
         [(gamma, f); (gamma, Not f)], build_inference 2
+
+    | IntroForall x, (gamma, Forall(y, f)) ->
+        [subst_sequent y (Var x) (gamma, f)], build_inference 1
+    | ElimForall (x, t), (gamma, f) -> 
+        [(gamma, Forall(x, rev_subst x t f))], build_inference 1
+
+    | IntroExists t, (gamma, Exists(x, f)) ->
+        [subst_sequent x t (gamma, f)], build_inference 1
+    | ElimExists (x,f), (gamma, g) ->
+        [ (gamma, Exists(x, f)); (f::gamma, g) ],
+        build_inference 2
 
     | ElimAbsurd, (gamma, _) ->
         [(gamma, Absurd)], build_inference 1

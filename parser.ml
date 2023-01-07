@@ -1,4 +1,4 @@
-type tokens = 
+type token = 
     | Ident of string
     | Keyword of string
     | Num of int
@@ -6,6 +6,22 @@ type tokens =
     | LPar | RPar 
     | TOr | TAnd | TNot | TImplies
     | TForall | TExists | TAbsurd
+
+let string_of_token tok = match tok with
+    | Ident x -> x
+    | Keyword x -> x
+    | Num n -> string_of_int n
+    | Dot -> "."
+    | Comma -> ","
+    | LPar -> "("
+    | RPar -> ")"
+    | TOr -> "\\/"
+    | TAnd -> "/\\"
+    | TImplies -> "->"
+    | TNot -> "~"
+    | TForall -> "\\-/"
+    | TExists -> "-]"
+    | TAbsurd -> "_|_"
 
 let keywords = [
     "print"; "intro"; "elim";
@@ -57,7 +73,7 @@ let rec lexer s =
     | '-'::'>'::q -> TImplies :: lexer q
     | '~'::q -> TNot :: lexer q
     | '\\'::'-'::'/'::q -> TForall :: lexer q
-    | '-'::')'::q -> TExists :: lexer q
+    | '-'::']'::q -> TExists :: lexer q
     | '_' :: '|' :: '_' :: q -> TAbsurd :: lexer q
     | x :: _ when is_digit x ->
         let x, q = extract_num s in
@@ -79,6 +95,7 @@ let tokenize s =
     lexer (List.of_seq (String.to_seq s))
 
 exception ParsingError
+exception ExtraTokenError of string
 
 let rec parse_term_list tl =
     match tl with
@@ -102,7 +119,7 @@ and parse_term tl =
 (*
 grammar :
     formula2 := ~formula2 | (formula) | R(t1,..,tn) |  _|_ | A
-        | \-/x.formula | -)x.formula
+        | \-/x.formula | -]x.formula
     formula1 := formula2 \/ formula1 | formula2 /\ formula1 | formula2
     formula := formula1 -> formula | formula1
 *)
@@ -123,7 +140,12 @@ let rec parse_formula2 tl =
             Formula.Not f, tl''
     | Ident x :: LPar :: q ->
             let term_list, tl' = parse_term_list q in
-                Formula.Rel(x, term_list), tl'
+            begin
+                match tl' with
+                | RPar :: q' ->
+                    Formula.Rel(x, term_list), q'
+                | _ -> raise ParsingError
+            end
     | Ident x :: tl' -> PropVar x, tl'
     | TForall :: Ident x :: Dot :: q ->
             let f, tl' = parse_formula q in
@@ -154,9 +176,10 @@ and parse_formula tl =
     | _ -> f1, tl'
 
 let parse_command tl =
-    match tl with
+    let c, remaining = match tl with
     | Keyword "quit" :: q -> Command.Quit, q
     | Keyword "print" :: q -> Command.Print, q
+    | Keyword "latex" :: q -> Command.LaTeX, q
     | Keyword "undo" :: q -> Command.Undo, q
     | Keyword "axiom" :: q -> Command.ApplyRule Deduction.Axiom, q
     
@@ -193,6 +216,19 @@ let parse_command tl =
         let f, q = parse_formula q in
         Command.ApplyRule (Deduction.ElimNot f), q
 
+    | Keyword "intro" :: TForall :: Ident x :: q ->
+        Command.ApplyRule (Deduction.IntroForall x), q
+    | Keyword "elim" :: TForall :: Ident x :: q ->
+        let t, q = parse_term q in
+        Command.ApplyRule (Deduction.ElimForall (x, t)), q
+
+    | Keyword "intro" :: TExists :: q ->
+        let t, q = parse_term q in
+        Command.ApplyRule (Deduction.IntroExists t), q
+    | Keyword "elim" :: TExists :: Ident x :: q ->
+        let f, q = parse_formula q in
+        Command.ApplyRule (Deduction.ElimExists (x, f)), q
+
     | Keyword "elim" :: TAbsurd :: q ->
         Command.ApplyRule Deduction.ElimAbsurd, q
 
@@ -203,5 +239,10 @@ let parse_command tl =
     | Keyword "qed" :: q -> Command.Qed, q
 
     | _ -> raise ParsingError
+    in if remaining <> [] 
+       then 
+           raise (ExtraTokenError
+                (String.concat ";" (List.map string_of_token remaining)))
+       else c
 
 

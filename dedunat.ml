@@ -62,7 +62,7 @@ let eval_tactic env s =
     try
         let out = ref "" in
         let tl = Parser.tokenize s in
-        let c, _ = Parser.parse_command tl in
+        let c = Parser.parse_command tl in
         let env = match c, env.context with
             | Command.Quit, _ -> raise Quit
             | Command.ApplyRule _, None ->
@@ -92,6 +92,8 @@ let eval_tactic env s =
     with
         | Parser.LexingError -> 
                 env, "Error lexing formula\n"
+        | Parser.ExtraTokenError s -> 
+                env, "Extra tokens at end of command: " ^ s
         | Parser.ParsingError -> 
                 env, "Error parsing formula\n"
         | Deduction.InvalidRule -> 
