@@ -7,6 +7,8 @@ Programme de MPI/MP-option info.
 Cela utilise la même interface terminal que `utop`, donc si `utop` est
 installé, vous avez les dépendances et `dune build` suffit.
 
+Pour bien gérer l'unicode, il faut une version récente d'`OCaml` : >=4.14.
+
 ## Utilisation
 
 Il s'agit d'une boucle interactive où on peut lancer des commandes (les

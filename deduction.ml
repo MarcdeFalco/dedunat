@@ -48,9 +48,9 @@ let string_of_sequent (fl, f) =
 let string_of_proof p =
     let add_spaces l = (* takes a list of string and add spaces left/right to get a matrix of strings *)
         let max_length = List.fold_left max 0
-            (List.map String.length l) in
+            (List.map U8string.length l) in
         List.map (fun s ->
-            let n = max_length - String.length s in
+            let n = max_length - U8string.length s in
             let n_left = n / 2 in
             let n_right = n - n_left in
             let spaces_left = String.make n_left ' ' in
@@ -73,7 +73,7 @@ let string_of_proof p =
         | [] :: _ -> []
         | _ -> String.concat "  " (List.map List.hd ll)
                :: fusion (List.map List.tl ll) in
-    let auxr r = match r with
+    let auxr_ascii r = match r with
         | ElimImplies _ -> "->e"
         | IntroImplies  -> "->i"
 
@@ -99,16 +99,46 @@ let string_of_proof p =
         | Axiom -> "ax"
 
         | Unfinished -> "*" in
+     let auxr_unicode r = match r with
+        | ElimImplies _ -> "→e"
+        | IntroImplies  -> "→i"
+
+        | ElimAnd (true,_) -> "∧eg"
+        | ElimAnd (false,_) -> "∧ed"
+        | IntroAnd  -> "∧ei"
+
+        | IntroOr true -> "∨ig"
+        | IntroOr false -> "∨id"
+        | ElimOr _ -> "∨e"
+
+        | ElimNot _ -> "~e"
+        | IntroNot -> "~i"
+
+        | IntroForall _ -> "∀i"
+        | ElimForall _  -> "∀e"
+
+        | IntroExists _ -> "∃i"
+        | ElimExists _  -> "∃e"
+
+        | ElimAbsurd -> "⟂"
+
+        | Axiom -> "ax"
+
+        | Unfinished -> "*" in
+
+    let auxr = if Config.is_ascii () then auxr_ascii else auxr_unicode in
+
     let rec aux (Inference(seq, pl, r)) =
         let sseq = string_of_sequent seq in
         let aux_pl = add_empty (List.map aux pl) in
         let lpl = fusion aux_pl in
-        let n = max (String.length sseq)
-            (List.fold_left max 0 (List.map String.length lpl)) in
+        let n = max (U8string.length sseq)
+            (List.fold_left max 0 (List.map U8string.length lpl)) in
         let sep = 
             if r = Unfinished 
-            then String.make n '*' 
-            else String.make n '-' ^ auxr r in
+            then U8string.make n (if Config.is_ascii () then "*" else "═")
+            else U8string.make n (if Config.is_ascii () then "-" else "─") 
+            ^ auxr r in
         let l = sseq :: sep :: lpl in
         add_spaces l
     in String.concat "\n" (aux p |> List.rev)
