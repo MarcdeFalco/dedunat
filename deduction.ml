@@ -111,8 +111,8 @@ let string_of_proof p =
         | IntroOr false -> "∨id"
         | ElimOr _ -> "∨e"
 
-        | ElimNot _ -> "~e"
-        | IntroNot -> "~i"
+        | ElimNot _ -> "¬e"
+        | IntroNot -> "¬i"
 
         | IntroForall _ -> "∀i"
         | ElimForall _  -> "∀e"

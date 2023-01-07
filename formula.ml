@@ -100,7 +100,7 @@ let rec unicode_string_of_formula f =
     | Or(f1,f2) -> aux f1^" ∨ "^aux f2
     | And(f1,f2) -> aux f1^" ∧ "^aux f2
     | Implies(f1,f2) -> aux f1^" → "^ aux f2
-    | Not f -> "~"^aux f
+    | Not f -> "¬"^aux f
     | Absurd -> "⟂"
     | Forall(x,f) -> "∀"^x^". "^unicode_string_of_formula f
     | Exists(x,f) -> "∃"^x^". "^unicode_string_of_formula f
