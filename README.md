@@ -89,10 +89,6 @@ Nothing to prove.
 Nothing to prove.
 > prove (\-/x.P(x)) -> -]x.P(x)
 
-```
-Nothing to prove.
-> prove (\-/x.P(x)) -> -]x.P(x)
-
 Goal :  |- (\-/x. P(x)) -> (-]x. P(x))
 > intro ->
 
