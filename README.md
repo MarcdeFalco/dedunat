@@ -118,6 +118,9 @@ No more goals to prove. Print/LaTeX or Qed.
 No more goals to prove. Print/LaTeX or Qed
 ```
 
+### Preuve de `(-]y.\-/x.R(x,y)) -> \-/x.-]y.R(x,y)`
+
+```
 > prove (-]y.\-/x.R(x,y)) -> \-/x.-]y.R(x,y)
 
 Goal :  |- (-]y. \-/x. R(x, y)) -> (\-/x. -]y. R(x, y))
