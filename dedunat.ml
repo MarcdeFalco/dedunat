@@ -8,24 +8,26 @@ type env = {
     context: Deduction.context option
 }
 
+let example_context =
+    let open Formula in
+    let open Deduction in
+    let a = PropVar "A" in let b = PropVar "B" in
+    [], fun _ ->
+Inference( ([], Implies(And(a,b),And(b,a))),
+ [Inference( ([And(a,b)], And(b,a)),
+  [
+   Inference( ([And(a,b)], b),
+    [Inference( ([And(a,b)],And(a,b)), [], Axiom )], ElimAnd(false,a));
+   Inference( ([And(a,b)], a),
+    [Inference( ([And(a,b)],And(a,b)), [], Axiom )], ElimAnd(true,b))
+  ], IntroAnd)
+ ], IntroImplies)
+
 let rec initial_env =
     {
         previous_env = initial_env;
         context = None
     }
-
-let print_env env =
-    match env.context with
-    | None -> Printf.printf "Nothing to prove.\n"
-    | Some (goals, _) ->
-        match goals with
-        | [] -> Printf.printf "No more goals to prove. Print or Qed.\n"
-        | g::goals' ->
-            List.iter (fun g' ->
-                Printf.printf "Remaining Goal : %s\n"
-                    (Deduction.string_of_sequent g')) goals';
-            Printf.printf "Goal : %s\n"
-                (Deduction.string_of_sequent g)
 
 exception Quit
 exception InvalidRule
@@ -35,7 +37,7 @@ let make_prompt env =
         | None -> "Nothing to prove.\n"
         | Some (goals, _) ->
             match goals with
-            | [] -> "No more goals to prove. Print or Qed.\n"
+            | [] -> "No more goals to prove. Print/LaTeX or Qed.\n"
             | g::goals' ->
                 String.concat "" 
                     (List.map (fun g' ->
@@ -78,6 +80,10 @@ let eval_tactic env s =
                 { previous_env = initial_env;
                   context = None }
             | Command.Print, Some c ->
+                out := Deduction.string_of_proof
+                    (Deduction.proof_of_context c);
+                env
+            | Command.LaTeX, Some c ->
                 out := Deduction.latex_of_proof
                     (Deduction.proof_of_context c);
                 env
@@ -90,45 +96,6 @@ let eval_tactic env s =
                 env, "Error parsing formula\n"
         | Deduction.InvalidRule -> 
                 env, "Rule can't be applied.\n"
-
-(*
-let rec command_loop term history env =
-    print_env env;
-    print_string "> ";
-    try
-        let tl = Parser.tokenize s in
-        let c, _ = Parser.parse_command tl in
-        let env' = match c, env.context with
-            | Command.Quit, _ -> raise Quit
-            | Command.ApplyRule _, None ->
-                Printf.printf "Nothing is being proved.\n"; env
-            | Command.ApplyRule r, Some c ->
-                { previous_env = env; 
-                  context = Some (Deduction.apply_rule r c) }
-            | Command.Rollback, _ ->
-                env.previous_env
-            | Command.Prove f, None ->
-                {  previous_env = env; 
-                   context = Some (Deduction.initial_context f) }
-            | Command.Qed, Some ([],_) ->
-                { previous_env = initial_env;
-                  context = None }
-            | _ -> env
-        in
-        command_loop term history env'
-    with 
-    | Parser.LexingError -> 
-            Printf.printf "Error lexing formula\n"; 
-            command_loop term history env
-    | Parser.ParsingError -> 
-            Printf.printf "Error parsing formula\n"; 
-            command_loop term history env
-    | Deduction.InvalidRule -> 
-            Printf.printf "Rule can't be applied.\n"; 
-            command_loop term history env
-    | Quit -> Printf.printf "Bye\n"
-
-*)
 
 let rec loop term history env =
    Lwt.catch (fun () ->

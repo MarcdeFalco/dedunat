@@ -1,10 +1,17 @@
 type tokens = 
     | Ident of string
+    | Keyword of string
     | Num of int
     | Dot | Comma 
     | LPar | RPar 
     | TOr | TAnd | TNot | TImplies
     | TForall | TExists | TAbsurd
+
+let keywords = [
+    "print"; "intro"; "elim";
+    "left"; "right"; "qed"; "prove";
+    "latex"; "quit"; "undo"; "axiom"
+]
 
 exception LexingError
 
@@ -63,7 +70,9 @@ let rec lexer s =
         let x, q = extract_ident s in
         if x = []
         then raise LexingError
-        else Ident (String.concat "" (List.map (String.make 1) x))
+        else let x = String.concat "" (List.map (String.make 1) x) in
+            let xl = String.lowercase_ascii x in
+            (if List.mem xl keywords then Keyword xl else Ident x)
             :: lexer q
 
 let tokenize s =
@@ -146,22 +155,22 @@ and parse_formula tl =
 
 let parse_command tl =
     match tl with
-    | Ident "Quit" :: q -> Command.Quit, q
-    | Ident "Print" :: q -> Command.Print, q
-    | Ident "Undo" :: q -> Command.Undo, q
-    | Ident "Axiom" :: q -> Command.ApplyRule Deduction.Axiom, q
+    | Keyword "quit" :: q -> Command.Quit, q
+    | Keyword "print" :: q -> Command.Print, q
+    | Keyword "undo" :: q -> Command.Undo, q
+    | Keyword "axiom" :: q -> Command.ApplyRule Deduction.Axiom, q
     
-    | Ident "Intro" :: TImplies :: q -> 
+    | Keyword "intro" :: TImplies :: q -> 
         Command.ApplyRule Deduction.IntroImplies, q
-    | Ident "Elim" :: TImplies :: q -> 
+    | Keyword "elim" :: TImplies :: q -> 
         let f, q = parse_formula q in
         Command.ApplyRule (Deduction.ElimImplies f), q
 
-    | Ident "Intro" :: TOr :: Ident "left" :: q -> 
+    | Keyword "intro" :: TOr :: Keyword "left" :: q -> 
         Command.ApplyRule (Deduction.IntroOr true), q
-    | Ident "Intro" :: TOr :: Ident "right" :: q -> 
+    | Keyword "intro" :: TOr :: Keyword "right" :: q -> 
         Command.ApplyRule (Deduction.IntroOr false), q
-    | Ident "Elim" :: TOr :: q -> 
+    | Keyword "elim" :: TOr :: q -> 
         let f1, q = parse_formula q in
         (match q with
         | Comma :: q ->
@@ -169,29 +178,29 @@ let parse_command tl =
             Command.ApplyRule (Deduction.ElimOr (f1, f2)), q
         | _ -> raise ParsingError)
 
-    | Ident "Intro" :: TAnd :: q -> 
+    | Keyword "intro" :: TAnd :: q -> 
         Command.ApplyRule Deduction.IntroAnd, q
-    | Ident "Elim" :: TAnd :: Ident "left" :: q -> 
+    | Keyword "elim" :: TAnd :: Keyword "left" :: q -> 
         let f, q = parse_formula q in
         Command.ApplyRule (Deduction.ElimAnd (true, f)), q
-    | Ident "Elim" :: TAnd :: Ident "right" :: q -> 
+    | Keyword "elim" :: TAnd :: Keyword "right" :: q -> 
         let f, q = parse_formula q in
         Command.ApplyRule (Deduction.ElimAnd (false, f)), q
 
-    | Ident "Intro" :: TNot :: q ->
+    | Keyword "intro" :: TNot :: q ->
         Command.ApplyRule Deduction.IntroNot, q
-    | Ident "Elim" :: TNot :: q ->
+    | Keyword "elim" :: TNot :: q ->
         let f, q = parse_formula q in
         Command.ApplyRule (Deduction.ElimNot f), q
 
-    | Ident "Elim" :: TAbsurd :: q ->
+    | Keyword "elim" :: TAbsurd :: q ->
         Command.ApplyRule Deduction.ElimAbsurd, q
 
-    | Ident "Prove" :: q -> 
+    | Keyword "prove" :: q -> 
         let f, q = parse_formula q in
         Command.Prove f, q
 
-    | Ident "Qed" :: q -> Command.Qed, q
+    | Keyword "qed" :: q -> Command.Qed, q
 
     | _ -> raise ParsingError
 

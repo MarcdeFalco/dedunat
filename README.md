@@ -9,11 +9,13 @@ installé, vous avez les dépendances et `dune build` suffit.
 
 ## Utilisation
 
-Il s'agit d'une boucle interactive où on peut lancer des commandes :
+Il s'agit d'une boucle interactive où on peut lancer des commandes (les
+mots-clés ne sont pas sensibles à la casse) :
 
 * `Prove formule` lance la preuve de la formule
 * `Qed` termine la preuve en cours si elle est bien achevée
-* `Print` affiche la preuve, qu'elle soit achevée ou non, en LaTeX avec 
+* `Print affiche la preuve, qu'elle soit achevée ou non, en ascii.
+* `LaTeX` affiche la preuve, qu'elle soit achevée ou non, en LaTeX avec 
   des commandes compatibles avec le paquet `busproofs.sty`
 * `Intro operateur args` pour appliquer une règle d'introduction
     * Pas d'arguments pour `/\`, `->` et `~`
@@ -32,42 +34,41 @@ Il s'agit d'une boucle interactive où on peut lancer des commandes :
 
 ```
 Nothing to prove.
-> Prove (~A \/ B) -> (A -> B)
+> prove A /\ B -> B /\ A
 
-Goal :  |- (~A \/ B) -> (A -> B)
-> Intro ->
+Goal :  |- (A /\ B) -> (B /\ A)
+> intro ->
 
-Goal : ~A \/ B |- A -> B
-> Intro ->
+Goal : A /\ B |- B /\ A
+> intro /\
 
-Goal : A, ~A \/ B |- B
-> Elim \/ ~A , B
+Remaining Goal : A /\ B |- A
+Goal : A /\ B |- B
+> elim /\ right A
 
-Remaining Goal : ~A, A, ~A \/ B |- B
-Remaining Goal : B, A, ~A \/ B |- B
-Goal : A, ~A \/ B |- ~A \/ B
-> Axiom
+Remaining Goal : A /\ B |- A
+Goal : A /\ B |- A /\ B
+> axiom
 
-Remaining Goal : B, A, ~A \/ B |- B
-Goal : ~A, A, ~A \/ B |- B
-> Intro _|_
+Goal : A /\ B |- A
+> elim /\ left B
 
-Remaining Goal : B, A, ~A \/ B |- B
-Goal : ~A, A, ~A \/ B |- _|_
-> Elim ~ A
-
-Remaining Goal : ~A, A, ~A \/ B |- ~A
-Remaining Goal : B, A, ~A \/ B |- B
-Goal : ~A, A, ~A \/ B |- A
-> Axiom
-
-Remaining Goal : B, A, ~A \/ B |- B
-Goal : ~A, A, ~A \/ B |- ~A
-> Axiom
-
-Goal : B, A, ~A \/ B |- B
-> Axiom
+Goal : A /\ B |- A /\ B
+> axiom
 
 No more goals to prove. Print or Qed.
-> Qed
+> print
+    ----------------ax      ----------------ax
+     A /\ B |- A /\ B        A /\ B |- A /\ B
+  ------------------/\ed  ------------------/\eg
+       A /\ B |- B             A /\ B |- A
+ ----------------------------------------------/\i
+                 A /\ B |- B /\ A
+-------------------------------------------------->i
+               |- (A /\ B) -> (B /\ A)
+No more goals to prove. Print or Qed.
+> qed
+
+Nothing to prove.
+>
 ```

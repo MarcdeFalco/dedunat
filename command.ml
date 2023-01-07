@@ -4,4 +4,5 @@ type command =
     | ApplyRule of Deduction.rule
     | Undo
     | Print
+    | LaTeX
     | Qed

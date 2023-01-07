@@ -32,6 +32,70 @@ let initial_context f =
 let proof_of_context (gl, c) =
     let pl = List.map unfinished_proof gl in
     c pl
+    
+let string_of_sequent (fl, f) =
+    String.concat ", " (List.map string_of_formula fl)
+        ^ " |- " ^ string_of_formula f
+
+let string_of_proof p =
+    let add_spaces l = (* takes a list of string and add spaces left/right to get a matrix of strings *)
+        let max_length = List.fold_left max 0
+            (List.map String.length l) in
+        List.map (fun s ->
+            let n = max_length - String.length s in
+            let n_left = n / 2 in
+            let n_right = n - n_left in
+            let spaces_left = String.make n_left ' ' in
+            let spaces_right = String.make n_right ' ' in
+            spaces_left ^ s ^ spaces_right) l
+    in
+    let add_empty ll = (* takes a list of list of strings and ensures they are
+                          all of the same length adding "" if needed *)
+        let max_length = List.fold_left max 0
+            (List.map List.length ll) in
+        List.map (fun l ->
+            l @ List.init (max_length - List.length l) (fun _ -> "")) ll
+    in
+    let rec fusion ll =
+        (* takes a list of list of string where every sublists is of the same
+           length and concatenates all first strings, then all second
+           strings... *)
+        match ll with
+        | [] -> []
+        | [] :: _ -> []
+        | _ -> String.concat "  " (List.map List.hd ll)
+               :: fusion (List.map List.tl ll) in
+    let auxr r = match r with
+        | ElimImplies _ -> "->e"
+        | IntroImplies  -> "->i"
+
+        | ElimAnd (true,_) -> "/\\eg"
+        | ElimAnd (false,_) -> "/\\ed"
+        | IntroAnd  -> "/\\i"
+
+        | IntroOr true -> "\\/ig"
+        | IntroOr false -> "\\/id"
+        | ElimOr _ -> "\\/e"
+
+        | ElimNot _ -> "~e"
+        | IntroNot -> "~i"
+
+        | ElimAbsurd -> "_|_e"
+
+        | Axiom -> "ax"
+
+        | Unfinished -> "*" in
+    let rec aux (Inference(seq, pl, r)) =
+        let sseq = string_of_sequent seq in
+        let aux_pl = add_empty (List.map aux pl) in
+        let lpl = fusion aux_pl in
+        let n = max (String.length sseq)
+            (List.fold_left max 0 (List.map String.length lpl)) in
+        let sep = String.make n '-' in
+        let l = sseq :: (sep ^ auxr r) :: lpl in
+        add_spaces l
+    in String.concat "\n" (aux p |> List.rev)
+
 
 let latex_of_proof p =
     let s = "\\def\\fCenter{\\mbox{\\ $\\vdash$\\ }}\n" in
@@ -75,9 +139,6 @@ let latex_of_proof p =
         ^ "Inf$" ^ l_seq ^ "$\n"
     in s ^ aux p ^ "\\DisplayProof\n"
 
-let string_of_sequent (fl, f) =
-    String.concat ", " (List.map string_of_formula fl)
-        ^ " |- " ^ string_of_formula f
 
 exception InvalidRule
 exception InvalidProof
