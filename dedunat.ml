@@ -132,6 +132,11 @@ let main () =
       | LTerm_read_line.Interrupt -> Lwt.return ()
       | exn -> Lwt.fail exn)
 
+let usage_msg = "dedunat [-ascii]"
+
+let speclist =
+    [( "-ascii", Arg.Set Config.ascii, "Ouput symbols in ascii")]
 
 let () =
+    Arg.parse speclist (fun _ -> ()) usage_msg;
     Lwt_main.run (main ())

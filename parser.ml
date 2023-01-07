@@ -68,13 +68,13 @@ let rec lexer s =
     | '.'::q -> Dot :: lexer q
     | '('::q -> LPar :: lexer q
     | ')'::q -> RPar :: lexer q
-    | '\\'::'/'::q -> TOr :: lexer q
-    | '/'::'\\'::q -> TAnd :: lexer q
-    | '-'::'>'::q -> TImplies :: lexer q
-    | '~'::q -> TNot :: lexer q
-    | '\\'::'-'::'/'::q -> TForall :: lexer q
-    | '-'::']'::q -> TExists :: lexer q
-    | '_' :: '|' :: '_' :: q -> TAbsurd :: lexer q
+    | '\\'::'/'::q | '\\' :: 'l' :: 'o' :: 'r' :: q | '\226' :: '\136' :: '\168' :: q -> TOr :: lexer q
+    | '/'::'\\'::q | '\\' :: 'l' :: 'a' :: 'n' :: 'd' :: q |  '\226' :: '\136' :: '\167' :: q -> TAnd :: lexer q
+    | '-'::'>'::q | '\\' :: 't' :: 'o' :: q | '\226' :: '\134' :: '\146' :: q -> TImplies :: lexer q
+    | '~'::q | '\\' :: 'n' :: 'e' :: 'g' :: q-> TNot :: lexer q
+    | '\\'::'-'::'/'::q | '\\' :: 'f' :: 'o' :: 'r' :: 'a':: 'l' :: 'l' :: q | '\226' :: '\136' :: '\128' :: q -> TForall :: lexer q
+    | '-'::']'::q | '\\' :: 'e' :: 'x' :: 'i' :: 's' :: 't' :: 's' :: q | '\226' :: '\136' :: '\131' :: q -> TExists :: lexer q
+    | '_' :: '|' :: '_' :: q | '\\' :: 'b' :: 'o' :: 't' :: q | '\226' :: '\159' :: '\130' :: q -> TAbsurd :: lexer q
     | x :: _ when is_digit x ->
         let x, q = extract_num s in
         if x = []

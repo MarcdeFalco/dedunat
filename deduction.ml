@@ -42,7 +42,8 @@ let proof_of_context (gl, c) =
     
 let string_of_sequent (fl, f) =
     String.concat ", " (List.map string_of_formula fl)
-        ^ " |- " ^ string_of_formula f
+        ^ (if Config.is_ascii () then " |- " else " ⊢ ") 
+        ^ string_of_formula f
 
 let string_of_proof p =
     let add_spaces l = (* takes a list of string and add spaces left/right to get a matrix of strings *)
