@@ -62,7 +62,8 @@ let string_of_proof p =
         let max_length = List.fold_left max 0
             (List.map List.length ll) in
         List.map (fun l ->
-            l @ List.init (max_length - List.length l) (fun _ -> "")) ll
+            add_spaces (l 
+                @ List.init (max_length - List.length l) (fun _ -> ""))) ll
     in
     let rec fusion ll =
         (* takes a list of list of string where every sublists is of the same
@@ -136,7 +137,7 @@ let string_of_proof p =
             (List.fold_left max 0 (List.map U8string.length lpl)) in
         let sep = 
             if r = Unfinished 
-            then U8string.make n (if Config.is_ascii () then "*" else "═")
+            then U8string.make n (if Config.is_ascii () then "*" else "░")
             else U8string.make n (if Config.is_ascii () then "-" else "─") 
             ^ auxr r in
         let l = sseq :: sep :: lpl in

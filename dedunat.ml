@@ -12,16 +12,15 @@ let example_context =
     let open Formula in
     let open Deduction in
     let a = PropVar "A" in let b = PropVar "B" in
-    [], fun _ ->
-Inference( ([], Implies(And(a,b),And(b,a))),
- [Inference( ([And(a,b)], And(b,a)),
-  [
-   Inference( ([And(a,b)], b),
-    [Inference( ([And(a,b)],And(a,b)), [], Axiom )], ElimAnd(false,a));
-   Inference( ([And(a,b)], a),
-    [Inference( ([And(a,b)],And(a,b)), [], Axiom )], ElimAnd(true,b))
-  ], IntroAnd)
- ], IntroImplies)
+    [([And(a,b)],b)], fun _ ->
+        Inference( ([], Implies(And(a,b),And(b,a))),
+         [Inference( ([And(a,b)], And(b,a)),
+          [
+              Inference( ([And(a,b)], b), [], Unfinished );
+           Inference( ([And(a,b)], a),
+            [Inference( ([And(a,b)],And(a,b)), [], Axiom )], ElimAnd(true,b))
+          ], IntroAnd)
+         ], IntroImplies)
 
 let rec initial_env =
     {
@@ -34,16 +33,16 @@ exception InvalidRule
 
 let make_prompt env =
     let prompt = (match env.context with
-        | None -> "Nothing to prove.\n"
+        | None -> "Nothing to prove "
         | Some (goals, _) ->
             match goals with
-            | [] -> "No more goals to prove. Print/LaTeX or Qed.\n"
+            | [] -> "No more goals to prove. Print/LaTeX or Qed "
             | g::goals' ->
                 String.concat "" 
                     (List.map (fun g' ->
                         Printf.sprintf "Remaining Goal : %s\n"
                             (Deduction.string_of_sequent g')) goals')
-                    ^ Printf.sprintf "Goal : %s\n"
+                    ^ Printf.sprintf "Goal : %s "
                             (Deduction.string_of_sequent g))
         ^ "> "
     in eval [ S prompt ]
@@ -139,4 +138,6 @@ let speclist =
 
 let () =
     Arg.parse speclist (fun _ -> ()) usage_msg;
+    Printf.printf "Symbols | → ∧ ∨ ¬ ⟂ ∀ ∃ | -> /\\ \\/ ~ _|_ \\-/ -]\n" ;
+    flush stdout;
     Lwt_main.run (main ())
