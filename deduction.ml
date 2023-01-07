@@ -104,8 +104,11 @@ let string_of_proof p =
         let lpl = fusion aux_pl in
         let n = max (String.length sseq)
             (List.fold_left max 0 (List.map String.length lpl)) in
-        let sep = String.make n '-' in
-        let l = sseq :: (sep ^ auxr r) :: lpl in
+        let sep = 
+            if r = Unfinished 
+            then String.make n '*' 
+            else String.make n '-' ^ auxr r in
+        let l = sseq :: sep :: lpl in
         add_spaces l
     in String.concat "\n" (aux p |> List.rev)
 
