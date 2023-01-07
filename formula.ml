@@ -47,10 +47,25 @@ let rec latex_of_formula f =
     | Forall(x,f) -> "\\forall"^x^". "^latex_of_formula f
     | Exists(x,f) -> "\\exists"^x^". "^latex_of_formula f
 
-
-let rec string_of_formula f =
+let rec unicode_string_of_formula f =
     let aux f = 
-        let s = string_of_formula f in
+        let s = unicode_string_of_formula f in
+        if simple f then s else "("^s^")"
+    in
+    match f with
+    | PropVar x -> x
+    | Rel(r,tl) -> r^"("^(string_of_term_list tl)^")"
+    | Or(f1,f2) -> aux f1^" ∨ "^aux f2
+    | And(f1,f2) -> aux f1^" ∧ "^aux f2
+    | Implies(f1,f2) -> aux f1^" → "^ aux f2
+    | Not f -> "~"^aux f
+    | Absurd -> "⟂"
+    | Forall(x,f) -> "∀"^x^". "^unicode_string_of_formula f
+    | Exists(x,f) -> "∃"^x^". "^unicode_string_of_formula f
+
+let rec ascii_string_of_formula f =
+    let aux f = 
+        let s = ascii_string_of_formula f in
         if simple f then s else "("^s^")"
     in
     match f with
@@ -61,8 +76,16 @@ let rec string_of_formula f =
     | Implies(f1,f2) -> aux f1^" -> "^ aux f2
     | Not f -> "~"^aux f
     | Absurd -> "_|_"
-    | Forall(x,f) -> "\\-/"^x^". "^string_of_formula f
-    | Exists(x,f) -> "-)"^x^". "^string_of_formula f
+    | Forall(x,f) -> "\\-/"^x^". "^ascii_string_of_formula f
+    | Exists(x,f) -> "-)"^x^". "^ascii_string_of_formula f
+
+let unicode = ref true
+
+let string_of_formula f =
+  if !unicode then
+    unicode_string_of_formula f
+  else
+    ascii_string_of_formula f
 
 let pretty_print f =
     print_string (string_of_formula f);
