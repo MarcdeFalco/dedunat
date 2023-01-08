@@ -36,7 +36,11 @@ mots-clés ne sont pas sensibles à la casse) :
     * `Elim \-/ x t` pour éliminer un pour tout en passant de `|- f` à `|- f[x\t]`
     * `Elim -] x f` pour éliminer un il existe en faisant apparaitre `-]x.f`
 * `Axiom` pour appliquer une règle axiome
+* `Classical` pour appliquer le tiers exclu (avec contexte vide ou non)
+* `Pierce` pour appliquer la loi de Pierce (avec contexte vide ou non)
 * `Undo` pour annuler la dernière règle appliquée
+* `Auto` pour appliquer une introduction sur le symbole du nœud racine quand il
+  n'y a pas d'arguments
 
 **Remarque** pour l'instant pas de tests de variables libres sur les règles de
 pour tout et il existe.
