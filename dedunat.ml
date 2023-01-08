@@ -53,6 +53,37 @@ class read_line ~term ~history ~env = object(self)
 
   method! show_box = false
 
+  method! complete =
+      let s = Zed_rope.to_string self#input_prev in
+      let n = Zed_string.length s in
+
+      let symbols = 
+          List.map Zed_char.of_utf8
+          [ "→";"∧";"∨";"¬";"⟂";"∀";"∃" ]  in
+
+      let rec index x l =
+          match l with
+          | [] -> raise Not_found
+          | t::_ when t = x -> 0
+          | _::q -> 1 + index x q in
+
+      let pop, next = 
+          if n = 0 || not (List.mem (Zed_string.get s (n-1)) symbols)
+          then false, Zed_string.make 1 (List.hd symbols)
+          else begin
+              let c = Zed_string.get s (n-1) in
+              let i = index c symbols in
+              let next = 
+                  if i = List.length symbols - 1 
+                  then Zed_string.of_utf8 ""
+                  else Zed_string.make 1 (List.nth symbols (i+1)) in
+              true, next
+          end in
+
+      if pop 
+      then Zed_edit.delete_prev_char self#context;
+      Zed_edit.insert self#context (Zed_rope.of_string next)
+
   initializer
     self#set_prompt (S.const (make_prompt env))
 end
@@ -138,6 +169,6 @@ let speclist =
 
 let () =
     Arg.parse speclist (fun _ -> ()) usage_msg;
-    Printf.printf "Symbols | → ∧ ∨ ¬ ⟂ ∀ ∃ | -> /\\ \\/ ~ _|_ \\-/ -]\n" ;
+    Printf.printf "Use <Tab> to cycle between symbols → ∧ ∨ ¬ ⟂ ∀ ∃\n" ;
     flush stdout;
     Lwt_main.run (main ())

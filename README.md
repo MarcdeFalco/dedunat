@@ -53,6 +53,60 @@ La saisie des symboles peut également se faire :
 
 ## Exemple de déroulé
 
+### Preuve de `(¬A ∧ ¬B) → ¬(A ∨ B)` en utilisant l'unicode
+
+```
+Use <Tab> to cycle between symbols → ∧ ∨ ¬ ⟂ ∀ ∃
+Nothing to prove > Prove (¬A ∧ ¬B) → ¬(A ∨ B)
+
+Goal :  ⊢ (¬A ∧ ¬B) → ¬(A ∨ B) > intro →
+
+Goal : ¬A ∧ ¬B ⊢ ¬(A ∨ B) > intro ¬
+
+Goal : A ∨ B, ¬A ∧ ¬B ⊢ ⟂ > elim ∨ A, B
+
+Remaining Goal : A, A ∨ B, ¬A ∧ ¬B ⊢ ⟂
+Remaining Goal : B, A ∨ B, ¬A ∧ ¬B ⊢ ⟂
+Goal : A ∨ B, ¬A ∧ ¬B ⊢ A ∨ B > axiom
+
+Remaining Goal : B, A ∨ B, ¬A ∧ ¬B ⊢ ⟂
+Goal : A, A ∨ B, ¬A ∧ ¬B ⊢ ⟂ > elim ¬ A
+
+Remaining Goal : A, A ∨ B, ¬A ∧ ¬B ⊢ ¬A
+Remaining Goal : B, A ∨ B, ¬A ∧ ¬B ⊢ ⟂
+Goal : A, A ∨ B, ¬A ∧ ¬B ⊢ A > axiom
+
+Remaining Goal : B, A ∨ B, ¬A ∧ ¬B ⊢ ⟂
+Goal : A, A ∨ B, ¬A ∧ ¬B ⊢ ¬A > elim ∧ left ¬B
+
+Remaining Goal : B, A ∨ B, ¬A ∧ ¬B ⊢ ⟂
+Goal : A, A ∨ B, ¬A ∧ ¬B ⊢ ¬A ∧ ¬B > axiom
+
+Goal : B, A ∨ B, ¬A ∧ ¬B ⊢ ⟂ > elim ¬ B
+
+Remaining Goal : B, A ∨ B, ¬A ∧ ¬B ⊢ ¬B
+Goal : B, A ∨ B, ¬A ∧ ¬B ⊢ B > axiom
+
+Goal : B, A ∨ B, ¬A ∧ ¬B ⊢ ¬B > elim ∧ right ¬A
+
+Goal : B, A ∨ B, ¬A ∧ ¬B ⊢ ¬A ∧ ¬B > axiom
+
+No more goals to prove. Print/LaTeX or Qed > print
+                                                        ───────────────────────────ax                                ───────────────────────────ax      
+                                                         A, A ∨ B, ¬A ∧ ¬B ⊢ ¬A ∧ ¬B                                  B, A ∨ B, ¬A ∧ ¬B ⊢ ¬A ∧ ¬B       
+                              ─────────────────────ax  ─────────────────────────────∧eg    ─────────────────────ax  ─────────────────────────────∧ed    
+                               A, A ∨ B, ¬A ∧ ¬B ⊢ A        A, A ∨ B, ¬A ∧ ¬B ⊢ ¬A          B, A ∨ B, ¬A ∧ ¬B ⊢ B        B, A ∨ B, ¬A ∧ ¬B ⊢ ¬B         
+   ──────────────────────ax  ─────────────────────────────────────────────────────────¬e  ─────────────────────────────────────────────────────────¬e   
+    A ∨ B, ¬A ∧ ¬B ⊢ A ∨ B                      A, A ∨ B, ¬A ∧ ¬B ⊢ ⟂                                        B, A ∨ B, ¬A ∧ ¬B ⊢ ⟂                      
+  ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────∨e  
+                                                                   A ∨ B, ¬A ∧ ¬B ⊢ ⟂                                                                   
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────¬i 
+                                                                   ¬A ∧ ¬B ⊢ ¬(A ∨ B)                                                                   
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────→i
+                                                                 ⊢ (¬A ∧ ¬B) → ¬(A ∨ B)                                                                 
+No more goals to prove. Print/LaTeX or Qed >
+```
+
 ### Preuve de `A /\ B -> B /\ A`
 ```
 Nothing to prove.

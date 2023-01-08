@@ -197,6 +197,7 @@ let latex_of_proof p =
 exception InvalidRule
 exception InvalidProof
 
+(* The prover is here. Everything is else is for handling input/output *)
 let apply_rule_to_goal r g =
     let build_inference n pl =
         if List.length pl <> n
