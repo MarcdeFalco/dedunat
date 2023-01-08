@@ -55,6 +55,38 @@ let rec rev_subst x t f =
 
     | _ -> f
 
+let alpha_rep f =
+    (* find a distinguished alpha-equivalent formula
+       by using fresh names - here, we force identifiers to start
+       with a letter, therefore, we can use numbers to substitute
+       If its' the nth quantifier encountered
+       \-/x.f will become \-/n.f[x\n] *)
+    let counter = ref 0 in
+    let rec aux f =
+        match f with
+        | And(f1, f2) -> And(aux f1, aux f2)
+        | Or(f1, f2) -> Or(aux f1, aux f2)
+        | Implies(f1, f2) -> Implies(aux f1, aux f2)
+        | Not f -> Not (aux f)
+        | Forall(x, f) ->
+            let fresh = string_of_int !counter in
+            incr counter;
+            Forall(fresh, subst x (Var fresh) f)
+        | Exists(x, f) ->
+            let fresh = string_of_int !counter in
+            incr counter;
+            Exists(fresh, subst x (Var fresh) f)
+        | _ -> f
+    in aux f
+
+let alpha_equivalent f1 f2 =
+    alpha_rep f1 = alpha_rep f2
+
+let rec mem_alpha f l =
+    match l with
+    | [] -> false
+    | g::q -> alpha_equivalent f g || mem_alpha f q
+
 let rec string_of_term t =
     match t with
     | Var x -> x

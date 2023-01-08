@@ -204,7 +204,7 @@ let apply_rule_to_goal r g =
         else Inference(g, pl, r) in
     match r, g with
 
-    | Axiom, (gamma, f) when List.mem f gamma ->
+    | Axiom, (gamma, f) when mem_alpha f gamma ->
         [], build_inference 0
     | IntroImplies, (gamma, Implies(f1, f2)) ->
         [(f1::gamma, f2)], build_inference 1
