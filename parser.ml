@@ -24,7 +24,8 @@ let string_of_token tok = match tok with
     | TAbsurd -> "_|_"
 
 let keywords = [
-    "print"; "intro"; "elim";
+    "print"; "intro"; "elim";"auto";
+    "classical";"pierce";
     "left"; "right"; "qed"; "prove";
     "latex"; "quit"; "undo"; "axiom"
 ]
@@ -235,6 +236,11 @@ let parse_command tl =
     | Keyword "prove" :: q -> 
         let f, q = parse_formula q in
         Command.Prove f, q
+
+    | Keyword "classical" :: q -> 
+        Command.ApplyRule Deduction.Classical, q
+    | Keyword "pierce" :: q -> 
+        Command.ApplyRule Deduction.Pierce, q
 
     | Keyword "auto" :: q -> 
         Command.Auto, q

@@ -17,6 +17,8 @@ type rule =
     | IntroExists of term
 
     | Axiom
+    | Classical
+    | Pierce
 
     | Unfinished
 
@@ -98,6 +100,8 @@ let string_of_proof p =
         | ElimAbsurd -> "_|_e"
 
         | Axiom -> "ax"
+        | Pierce -> "pi"
+        | Classical -> "cl"
 
         | Unfinished -> "*" in
      let auxr_unicode r = match r with
@@ -124,6 +128,8 @@ let string_of_proof p =
         | ElimAbsurd -> "⟂"
 
         | Axiom -> "ax"
+        | Pierce -> "pi"
+        | Classical -> "cl"
 
         | Unfinished -> "*" in
 
@@ -172,6 +178,8 @@ let latex_of_proof p =
         | ElimAbsurd -> "\\perp_e"
 
         | Axiom -> "ax"
+        | Pierce -> "pi"
+        | Classical -> "cl"
 
         | Unfinished -> "*"
 
@@ -207,6 +215,19 @@ let apply_rule_to_goal r g =
 
     | Axiom, (gamma, f) when mem_alpha f gamma ->
         [], build_inference 0
+
+    | Classical, (_, Or(Not f, g)) 
+        when alpha_equivalent f g ->
+        [], build_inference 0
+    | Classical, (_, Or(f, Not g)) 
+        when alpha_equivalent f g ->
+        [], build_inference 0
+
+    | Pierce, (_, Implies(Implies(Implies(f,_),h),k))
+        when alpha_equivalent f h
+            && alpha_equivalent f k ->
+        [], build_inference 0
+
     | IntroImplies, (gamma, Implies(f1, f2)) ->
         [(f1::gamma, f2)], build_inference 1
     | ElimImplies hyp, (gamma, f) ->
