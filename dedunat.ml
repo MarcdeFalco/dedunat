@@ -101,6 +101,14 @@ let eval_tactic env s =
             | Command.ApplyRule r, Some c ->
                 { previous_env = env; 
                   context = Some (Deduction.apply_rule r c) }
+            | Command.Auto, Some c ->
+                (match Deduction.detect_rule c with
+                | None -> 
+                    out := "Can't find rule to apply.\n";
+                    env
+                | Some r ->
+                    { previous_env = env; 
+                      context = Some (Deduction.apply_rule r c) })
             | Command.Undo, _ ->
                 env.previous_env
             | Command.Prove f, None ->

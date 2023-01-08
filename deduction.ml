@@ -269,3 +269,18 @@ let apply_rule r c =
                 proof_gen
                     ((new_gen pl1) :: pl2))
 
+let detect_rule_sequent g =
+    let _, f = g in
+    match f with
+    | And(_,_) -> Some IntroAnd
+    | Implies(_,_) -> Some IntroImplies
+    | Forall(x,_) -> Some (IntroForall x)
+    | Not _ -> Some IntroNot
+    | _ -> None
+
+let detect_rule c =
+    let goals, _ = c in
+    match goals with
+    | [] -> None
+    | g::_ -> detect_rule_sequent g
+

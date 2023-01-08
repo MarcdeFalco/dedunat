@@ -236,6 +236,9 @@ let parse_command tl =
         let f, q = parse_formula q in
         Command.Prove f, q
 
+    | Keyword "auto" :: q -> 
+        Command.Auto, q
+
     | Keyword "qed" :: q -> Command.Qed, q
 
     | _ -> raise ParsingError
