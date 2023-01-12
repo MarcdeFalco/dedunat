@@ -1,3 +1,32 @@
+type operator =
+    | OpAnd | OpOr | OpImplies | OpNot
+    | OpForall | OpExists | OpAbsurd
+
+let ascii_string_of_operator op =
+    match op with
+    | OpAnd -> "/\\"
+    | OpOr -> "\\/"
+    | OpImplies -> "->"
+    | OpNot -> "~"
+    | OpForall -> "\\-/"
+    | OpExists -> "-]"
+    | OpAbsurd -> "_|_"
+
+let unicode_string_of_operator op =
+    match op with
+    | OpAnd -> "∧"
+    | OpOr -> "∨"
+    | OpImplies -> "→"
+    | OpNot -> "¬"
+    | OpForall -> "∀"
+    | OpExists -> "∃"
+    | OpAbsurd -> "⟂"
+
+let string_of_operator op =
+    if Config.is_ascii ()
+    then ascii_string_of_operator op
+    else unicode_string_of_operator op
+    
 type term =
     | Var of string
     | Function of string * term list

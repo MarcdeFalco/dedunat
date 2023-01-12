@@ -25,7 +25,7 @@ let string_of_token tok = match tok with
 
 let keywords = [
     "print"; "intro"; "elim";"auto";
-    "classical";"pierce";
+    "classical";"pierce"; "help";
     "left"; "right"; "qed"; "prove";
     "latex"; "quit"; "undo"; "axiom"
 ]
@@ -182,6 +182,16 @@ let parse_command tl =
     | Keyword "print" :: q -> Command.Print, q
     | Keyword "latex" :: q -> Command.LaTeX, q
     | Keyword "undo" :: q -> Command.Undo, q
+    | Keyword "help" :: TAnd :: q -> Command.HelpOp Formula.OpAnd, q
+    | Keyword "help" :: TOr :: q -> Command.HelpOp Formula.OpOr, q
+    | Keyword "help" :: TNot :: q -> Command.HelpOp Formula.OpNot, q
+    | Keyword "help" :: TImplies :: q -> Command.HelpOp Formula.OpImplies, q
+    | Keyword "help" :: TForall :: q -> Command.HelpOp Formula.OpForall, q
+    | Keyword "help" :: TExists :: q -> Command.HelpOp Formula.OpExists, q
+    | Keyword "help" :: TAbsurd :: q -> Command.HelpOp Formula.OpAbsurd, q
+    | Keyword "help" :: Keyword "elim" :: q -> Command.HelpElim, q
+    | Keyword "help" :: Keyword "intro" :: q -> Command.HelpIntro, q
+    | Keyword "help" :: q -> Command.Help, q
     | Keyword "axiom" :: q -> Command.ApplyRule Deduction.Axiom, q
     
     | Keyword "intro" :: TImplies :: q -> 

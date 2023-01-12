@@ -8,6 +8,68 @@ type env = {
     context: Deduction.context option
 }
 
+let help_elim op = 
+    let open Formula in
+    let sdash = if Config.is_ascii () then "|-" else "⊢" in
+    let sop = string_of_operator op in
+    match op with
+    | OpAnd ->
+        "elim " ^ sop ^ " left B : Gamma " ^ sdash ^ " A => Gamma " ^ sdash
+        ^ " B" ^ sop ^ "A\n"
+    | OpOr ->
+        "elim " ^ sop ^ " A, B : Gamma " ^ sdash ^ " C => Gamma "
+        ^ sdash ^ " A" ^ sop ^ "B ; Gamma,A " ^ sdash 
+        ^ " C ; Gamma,B " ^ sdash ^ " C\n"
+    | OpImplies ->
+        "elim " ^ sop ^ " A : Gamma " ^ sdash ^ " B => Gamma "
+        ^ sdash ^ " A" ^ sop ^ "B ; Gamma " ^ sdash ^ " A\n"
+    | OpNot ->
+        "elim " ^ sop ^ " A  Gamma " ^ sdash ^ 
+        " " ^ (if Config.is_ascii () then "_|_" else "⟂")
+        ^ " => Gamma " ^ sdash ^ " A ; Gamma "
+        ^ sdash ^ " " ^ sop ^ "A\n"
+    | _ -> "todo\n"
+
+let help_intro op = 
+    let open Formula in
+    let sdash = if Config.is_ascii () then "|-" else "⊢" in
+    let sop = string_of_operator op in
+    match op with
+    | OpAnd ->
+        "intro " ^ sop ^ " : Gamma " ^ sdash ^ "A" ^ sop ^ "B => Gamma "
+        ^ sdash ^ " A ; Gamma " ^ sdash ^ " B\n"
+    | OpOr ->
+        "intro " ^ sop ^ " left : Gamma " ^ sdash ^ "A" ^ sop ^ "B => Gamma "
+        ^ sdash ^ "A\n"
+        ^ "intro " ^ sop ^ " right : Gamma " ^ sdash ^ "A" ^ sop ^ "B => Gamma "
+        ^ sdash ^ "B\n"
+    | OpImplies ->
+        "intro " ^ sop ^ " : Gamma " ^ sdash ^ "A" ^ sop ^ "B => Gamma,A "
+        ^ sdash ^ " B\n"
+    | OpNot ->
+        "intro " ^ sop ^ " : Gamma " ^ sdash ^ " " ^ sop ^ "A => Gamma,A "
+        ^ sdash ^ " " ^ (if Config.is_ascii () then "_|_" else "⟂")
+        ^ "\n"
+    | _ -> "todo\n"
+
+
+let help op =
+    help_intro op ^
+    help_elim op
+
+let help_intros =
+    let open Formula in
+    String.concat ""
+        (List.map help_intro
+        [OpAnd; OpOr; OpImplies; OpNot; OpForall; OpExists; OpAbsurd])
+
+let help_elims =
+    let open Formula in
+    String.concat ""
+        (List.map help_elim
+        [OpAnd; OpOr; OpImplies; OpNot; OpForall; OpExists; OpAbsurd])
+
+
 let example_context =
     let open Formula in
     let open Deduction in
@@ -54,35 +116,38 @@ class read_line ~term ~history ~env = object(self)
   method! show_box = false
 
   method! complete =
-      let s = Zed_rope.to_string self#input_prev in
-      let n = Zed_string.length s in
+      if not (Config.is_ascii ())
+      then begin
+          let s = Zed_rope.to_string self#input_prev in
+          let n = Zed_string.length s in
 
-      let symbols = 
-          List.map Zed_char.of_utf8
-          [ "→";"∧";"∨";"¬";"⟂";"∀";"∃" ]  in
+          let symbols = 
+              List.map Zed_char.of_utf8
+              [ "→";"∧";"∨";"¬";"⟂";"∀";"∃" ]  in
 
-      let rec index x l =
-          match l with
-          | [] -> raise Not_found
-          | t::_ when t = x -> 0
-          | _::q -> 1 + index x q in
+          let rec index x l =
+              match l with
+              | [] -> raise Not_found
+              | t::_ when t = x -> 0
+              | _::q -> 1 + index x q in
 
-      let pop, next = 
-          if n = 0 || not (List.mem (Zed_string.get s (n-1)) symbols)
-          then false, Zed_string.make 1 (List.hd symbols)
-          else begin
-              let c = Zed_string.get s (n-1) in
-              let i = index c symbols in
-              let next = 
-                  if i = List.length symbols - 1 
-                  then Zed_string.of_utf8 ""
-                  else Zed_string.make 1 (List.nth symbols (i+1)) in
-              true, next
-          end in
+          let pop, next = 
+              if n = 0 || not (List.mem (Zed_string.get s (n-1)) symbols)
+              then false, Zed_string.make 1 (List.hd symbols)
+              else begin
+                  let c = Zed_string.get s (n-1) in
+                  let i = index c symbols in
+                  let next = 
+                      if i = List.length symbols - 1 
+                      then Zed_string.of_utf8 ""
+                      else Zed_string.make 1 (List.nth symbols (i+1)) in
+                  true, next
+              end in
 
-      if pop 
-      then Zed_edit.delete_prev_char self#context;
-      Zed_edit.insert self#context (Zed_rope.of_string next)
+          if pop 
+          then Zed_edit.delete_prev_char self#context;
+          Zed_edit.insert self#context (Zed_rope.of_string next)
+        end
 
   initializer
     self#set_prompt (S.const (make_prompt env))
@@ -124,6 +189,18 @@ let eval_tactic env s =
             | Command.LaTeX, Some c ->
                 out := Deduction.latex_of_proof
                     (Deduction.proof_of_context c);
+                env
+            | Command.HelpOp op, _ ->
+                out := help op;
+                env
+            | Command.HelpIntro, _ ->
+                out := help_intros;
+                env
+            | Command.HelpElim, _ ->
+                out := help_elims;
+                env
+            | Command.Help, _ ->
+                out := help_intros ^ help_elims;
                 env
             | _ -> env
         in env, !out
@@ -177,6 +254,11 @@ let speclist =
 
 let () =
     Arg.parse speclist (fun _ -> ()) usage_msg;
-    Printf.printf "Use <Tab> to cycle between symbols → ∧ ∨ ¬ ⟂ ∀ ∃\n" ;
+    let usage = 
+        if Config.is_ascii ()
+        then "Ascii symbols : -> /\\ \\/ ~ _|_ \\-/ -]\n"
+        else "Use <Tab> to cycle between symbols → ∧ ∨ ¬ ⟂ ∀ ∃\n" 
+    in
+    print_string usage;
     flush stdout;
     Lwt_main.run (main ())
