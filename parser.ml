@@ -25,7 +25,7 @@ let string_of_token tok = match tok with
 
 let keywords = [
     "print"; "intro"; "elim";"auto";
-    "classical";"pierce"; "help";
+    "classical";"peirce"; "help";
     "left"; "right"; "qed"; "prove";
     "latex"; "quit"; "undo"; "axiom"
 ]
@@ -232,7 +232,6 @@ let parse_command tl =
     | Keyword "elim" :: TForall :: Ident x :: q ->
         let t, q = parse_term q in
         Command.ApplyRule (Deduction.ElimForall (x, t)), q
-
     | Keyword "intro" :: TExists :: q ->
         let t, q = parse_term q in
         Command.ApplyRule (Deduction.IntroExists t), q
@@ -249,8 +248,8 @@ let parse_command tl =
 
     | Keyword "classical" :: q -> 
         Command.ApplyRule Deduction.Classical, q
-    | Keyword "pierce" :: q -> 
-        Command.ApplyRule Deduction.Pierce, q
+    | Keyword "peirce" :: q -> 
+        Command.ApplyRule Deduction.Peirce, q
 
     | Keyword "auto" :: q -> 
         Command.Auto, q

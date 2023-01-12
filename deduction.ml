@@ -18,7 +18,7 @@ type rule =
 
     | Axiom
     | Classical
-    | Pierce
+    | Peirce
 
     | Unfinished
 
@@ -100,7 +100,7 @@ let string_of_proof p =
         | ElimAbsurd -> "_|_e"
 
         | Axiom -> "ax"
-        | Pierce -> "pi"
+        | Peirce -> "pi"
         | Classical -> "cl"
 
         | Unfinished -> "*" in
@@ -128,7 +128,7 @@ let string_of_proof p =
         | ElimAbsurd -> "⟂"
 
         | Axiom -> "ax"
-        | Pierce -> "pi"
+        | Peirce -> "pi"
         | Classical -> "cl"
 
         | Unfinished -> "*" in
@@ -178,7 +178,7 @@ let latex_of_proof p =
         | ElimAbsurd -> "\\perp_e"
 
         | Axiom -> "ax"
-        | Pierce -> "pi"
+        | Peirce -> "pi"
         | Classical -> "cl"
 
         | Unfinished -> "*"
@@ -223,7 +223,7 @@ let apply_rule_to_goal r g =
         when alpha_equivalent f g ->
         [], build_inference 0
 
-    | Pierce, (_, Implies(Implies(Implies(f,_),h),k))
+    | Peirce, (_, Implies(Implies(Implies(f,_),h),k))
         when alpha_equivalent f h
             && alpha_equivalent f k ->
         [], build_inference 0

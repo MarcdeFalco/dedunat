@@ -28,7 +28,19 @@ let help_elim op =
         " " ^ (if Config.is_ascii () then "_|_" else "⟂")
         ^ " => Gamma " ^ sdash ^ " A ; Gamma "
         ^ sdash ^ " " ^ sop ^ "A\n"
-    | _ -> "todo\n"
+    | OpAbsurd ->
+        "elim " ^ sop ^ " : Gamma " ^ sdash ^ " A => Gamma "
+        ^ sdash ^ " " ^ sop ^ "\n"
+    | OpForall ->
+        "elim " ^ sop ^ " x t : "
+        ^ "Gamma " ^ sdash ^ " A[x\\t]"
+        ^ " => Gamma " ^ sdash ^ sop ^ "x.A\n"
+    | OpExists ->
+        "elim " ^ sop ^ " x A : "
+        ^ "Gamma " ^ sdash ^ " B => Gamma "
+        ^ sdash ^ " " ^ sop ^ "x.A ; Gamma,A " ^ sdash
+        ^ " B\n"
+
 
 let help_intro op = 
     let open Formula in
@@ -50,7 +62,13 @@ let help_intro op =
         "intro " ^ sop ^ " : Gamma " ^ sdash ^ " " ^ sop ^ "A => Gamma,A "
         ^ sdash ^ " " ^ (if Config.is_ascii () then "_|_" else "⟂")
         ^ "\n"
-    | _ -> "todo\n"
+    | OpAbsurd -> ""
+    | OpForall ->
+        "intro " ^ sop ^ " ident : Gamma " ^ sdash ^ " " ^ sop ^ "x.A => Gamma "
+        ^ sdash ^ "A[x\\ident]\n"
+    | OpExists ->
+        "intro " ^ sop ^ " t : Gamma " ^ sdash ^ " " ^ sop ^ "x.A => Gamma "
+        ^ sdash ^ "A[x\\t]\n"
 
 
 let help op =
