@@ -1,6 +1,6 @@
 type command =
     | Quit
-    | Prove of Formula.formula
+    | Prove of Deduction.sequent
     | ApplyRule of Deduction.rule
     | HelpOp of Formula.operator
     | HelpElim

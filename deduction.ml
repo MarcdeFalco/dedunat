@@ -33,8 +33,8 @@ type context = sequent list * (proof list -> proof)
 let unfinished_proof g =
     Inference(g,[],Unfinished)
 
-let initial_context f =
-    [([], f)], fun l -> match l with
+let initial_context seq =
+    [seq], fun l -> match l with
         | [p] -> p
         | _ -> failwith "Invalid proof"
 

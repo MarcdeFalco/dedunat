@@ -79,7 +79,7 @@ let help_intros =
     let open Formula in
     String.concat ""
         (List.map help_intro
-        [OpAnd; OpOr; OpImplies; OpNot; OpForall; OpExists; OpAbsurd])
+        [OpAnd; OpOr; OpImplies; OpNot; OpForall; OpExists])
 
 let help_elims =
     let open Formula in
@@ -108,7 +108,6 @@ let rec initial_env =
         context = None
     }
 
-exception Quit
 exception InvalidRule
 
 let make_prompt env =
@@ -177,7 +176,6 @@ let eval_tactic env s =
         let tl = Parser.tokenize s in
         let c = Parser.parse_command tl in
         let env = match c, env.context with
-            | Command.Quit, _ -> raise Quit
             | Command.ApplyRule _, None ->
                 out := "Nothing is being proved.\n";
                 env
@@ -194,9 +192,9 @@ let eval_tactic env s =
                       context = Some (Deduction.apply_rule r c) })
             | Command.Undo, _ ->
                 env.previous_env
-            | Command.Prove f, None ->
+            | Command.Prove seq, None ->
                 {  previous_env = env; 
-                   context = Some (Deduction.initial_context f) }
+                   context = Some (Deduction.initial_context seq) }
             | Command.Qed, Some ([],_) ->
                 { previous_env = initial_env;
                   context = None }
@@ -220,6 +218,9 @@ let eval_tactic env s =
             | Command.Help, _ ->
                 out := help_intros ^ help_elims;
                 env
+            | Command.Quit, _ ->
+                Printf.printf "Quitting";
+                raise LTerm_read_line.Interrupt 
             | _ -> env
         in env, !out
     with

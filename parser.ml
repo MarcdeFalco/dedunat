@@ -6,6 +6,7 @@ type token =
     | LPar | RPar 
     | TOr | TAnd | TNot | TImplies
     | TForall | TExists | TAbsurd
+    | TEntails
 
 let string_of_token tok = match tok with
     | Ident x -> x
@@ -22,6 +23,7 @@ let string_of_token tok = match tok with
     | TForall -> "\\-/"
     | TExists -> "-]"
     | TAbsurd -> "_|_"
+    | TEntails -> "|-"
 
 let keywords = [
     "print"; "intro"; "elim";"auto";
@@ -69,6 +71,8 @@ let rec lexer s =
     | '.'::q -> Dot :: lexer q
     | '('::q -> LPar :: lexer q
     | ')'::q -> RPar :: lexer q
+    | '|'::'-'::q | '\\' :: 'v' :: 'd' :: 'a' :: 's' :: 'h' :: q 
+        -> TEntails :: lexer q
     | '\\'::'/'::q | '\\' :: 'l' :: 'o' :: 'r' :: q | '\226' :: '\136' :: '\168' :: q -> TOr :: lexer q
     | '/'::'\\'::q | '\\' :: 'l' :: 'a' :: 'n' :: 'd' :: q |  '\226' :: '\136' :: '\167' :: q -> TAnd :: lexer q
     | '-'::'>'::q | '\\' :: 't' :: 'o' :: q | '\226' :: '\134' :: '\146' :: q -> TImplies :: lexer q
@@ -176,9 +180,21 @@ and parse_formula tl =
             Formula.Implies(f1,f2), q'
     | _ -> f1, tl'
 
+let rec parse_sequent tl =
+    let f, q = parse_formula tl in
+    match q with
+    | Comma::q ->
+        let (l,f'), q = parse_sequent q in
+        (f::l,f'), q
+    | TEntails::q ->
+        let f', q = parse_formula q in
+        ([f],f'), q
+    | _ -> ([],f),q
+
 let parse_command tl =
     let c, remaining = match tl with
     | Keyword "quit" :: q -> Command.Quit, q
+    | Keyword "french" :: q -> Command.French, q
     | Keyword "print" :: q -> Command.Print, q
     | Keyword "latex" :: q -> Command.LaTeX, q
     | Keyword "undo" :: q -> Command.Undo, q
@@ -243,8 +259,9 @@ let parse_command tl =
         Command.ApplyRule Deduction.ElimAbsurd, q
 
     | Keyword "prove" :: q -> 
-        let f, q = parse_formula q in
-        Command.Prove f, q
+        let seq, q = parse_sequent q in
+
+        Command.Prove seq, q
 
     | Keyword "classical" :: q -> 
         Command.ApplyRule Deduction.Classical, q
