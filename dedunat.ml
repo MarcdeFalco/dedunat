@@ -2,7 +2,6 @@ open React
 open Lwt
 open LTerm_text
 
-
 type env = {
     previous_env : env;
     context: Deduction.context option
@@ -204,6 +203,10 @@ let eval_tactic env s =
                 env
             | Command.LaTeX, Some c ->
                 out := PrettyPrinting.latex_of_proof
+                    (Deduction.proof_of_context c);
+                env
+            | Command.French, Some c ->
+                out := PrettyPrinting.frenchmath_of_proof
                     (Deduction.proof_of_context c);
                 env
             | Command.HelpOp op, _ ->

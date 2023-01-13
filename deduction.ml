@@ -20,6 +20,8 @@ type rule =
     | Classical
     | Peirce
 
+    | Assume
+
     | Unfinished
 
 type sequent = formula list * formula
@@ -52,6 +54,9 @@ let apply_rule_to_goal r g =
         then raise InvalidProof
         else Inference(g, pl, r) in
     match r, g with
+
+    | Assume, _ ->
+        [], build_inference 0
 
     | Axiom, (gamma, f) when mem_alpha f gamma ->
         [], build_inference 0

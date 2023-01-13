@@ -9,5 +9,6 @@ type command =
     | Undo
     | Auto
     | Print
+    | French
     | LaTeX
     | Qed

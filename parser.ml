@@ -29,7 +29,8 @@ let keywords = [
     "print"; "intro"; "elim";"auto";
     "classical";"peirce"; "help";
     "left"; "right"; "qed"; "prove";
-    "latex"; "quit"; "undo"; "axiom"
+    "latex"; "quit"; "undo"; "axiom";
+    "french"; "assume"
 ]
 
 exception LexingError
@@ -228,6 +229,8 @@ let parse_command tl =
             Command.ApplyRule (Deduction.ElimOr (f1, f2)), q
         | _ -> raise ParsingError)
 
+    | Keyword "assume" :: q -> 
+        Command.ApplyRule Deduction.Assume, q
     | Keyword "intro" :: TAnd :: q -> 
         Command.ApplyRule Deduction.IntroAnd, q
     | Keyword "elim" :: TAnd :: Keyword "left" :: q -> 

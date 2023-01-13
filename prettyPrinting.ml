@@ -158,6 +158,7 @@ let string_of_proof p =
 
         | ElimAbsurd -> "_|_e"
 
+        | Assume -> "!"
         | Axiom -> "ax"
         | Peirce -> "pi"
         | Classical -> "cl"
@@ -186,6 +187,7 @@ let string_of_proof p =
 
         | ElimAbsurd -> "⟂e"
 
+        | Assume -> "!"
         | Axiom -> "ax"
         | Peirce -> "pi"
         | Classical -> "cl"
@@ -236,6 +238,7 @@ let latex_of_proof p =
 
         | ElimAbsurd -> "\\perp_e"
 
+        | Assume -> "!"
         | Axiom -> "ax"
         | Peirce -> "pi"
         | Classical -> "cl"
@@ -260,5 +263,206 @@ let latex_of_proof p =
         ^ "Inf$" ^ l_seq ^ "$\n"
     in s ^ aux p ^ "\\DisplayProof\n"
 
+
+let frenchmath_of_proof p =
+    let Inference(seq, _, _) = p in
+    let lines = Stack.create () in
+    let level = ref 0 in
+    let add_line s = Stack.push (String.make !level ' ' ^ s) lines in
+    let hyp, f = seq in
+    add_line (Printf.sprintf "Théorème : %son a %s"
+                (if hyp = [] then ""
+                    else "Si " ^ String.concat " et " 
+                            (List.map string_of_formula hyp)
+                            ^ ", alors ")
+                (string_of_formula f));
+    let rec aux (Inference(seq, pl, r)) =
+        match r with
+
+        | IntroAnd ->
+            begin
+            let _, f = seq in 
+            match pl, f with
+            | [pa;pb], And(a,b) ->
+                add_line (Printf.sprintf "Montrons %s :"
+                    (string_of_formula a));
+                incr level;
+                aux pa;
+                decr level;
+                add_line (Printf.sprintf "Montrons %s :"
+                    (string_of_formula b));
+                incr level;
+                aux pb;
+                decr level;
+                add_line (Printf.sprintf "On a donc %s."
+                    (string_of_formula f))
+            | _ -> failwith "impossible"
+            end
+        | ElimAnd _ ->
+            let _, f = seq in 
+            List.iter aux pl;
+            add_line
+                (Printf.sprintf "On a ainsi %s."
+                    (string_of_formula f))
+
+        | IntroOr _ ->
+            let _, f = seq in 
+            List.iter aux pl;
+            add_line
+                (Printf.sprintf "On a ainsi %s."
+                    (string_of_formula f))
+        | ElimOr (a,b) ->
+            let _, f = seq in 
+            begin
+            match pl with
+            | [pcond;pa;pb] ->
+                add_line (Printf.sprintf "Montrons la disjonction : %s."
+                    (string_of_formula (Or(a,b))));
+                incr level;
+                aux pcond;
+                decr level;
+                add_line "On peut alors faire une disjonction de cas.";
+                add_line (Printf.sprintf "Premier cas : on suppose %s."
+                    (string_of_formula a));
+                incr level;
+                aux pa;
+                decr level;
+                add_line (Printf.sprintf "Second cas : on suppose %s."
+                    (string_of_formula b));
+                incr level;
+                aux pb;
+                decr level;
+                add_line 
+                    (Printf.sprintf "On a bien montré %s dans tous les cas."
+                    (string_of_formula f))
+            | _ -> failwith "impossible"
+            end
+
+        | IntroImplies ->
+            begin
+            match seq with
+            | _, Implies(f,g) ->
+                add_line
+                    (Printf.sprintf "Supposons %s."
+                        (string_of_formula f));
+                incr level;
+                List.iter aux pl;
+                decr level;
+                add_line
+                    (Printf.sprintf "On a montré %s. Donc %s est vrai."
+                        (string_of_formula g)
+                        (string_of_formula (Implies(f,g))))
+            | _ -> failwith "impossible"
+            end
+        | ElimImplies f ->
+            begin
+                let _, g = seq in
+            match pl with
+            | [pimp; phyp] ->
+                add_line
+                    (Printf.sprintf "Montrons que de %s on peut déduire %s :"
+                        (string_of_formula f)
+                        (string_of_formula g));
+                incr level;
+                aux pimp;
+                decr level;
+                add_line
+                    (Printf.sprintf "On va maintenant montrer %s :"
+                        (string_of_formula f));
+                incr level;
+                aux phyp;
+                decr level;
+                add_line
+                    (Printf.sprintf "On peut ainsi en déduire %s."
+                        (string_of_formula g))
+            | _ -> failwith "impossible"
+            end
+
+        | ElimAbsurd ->
+            add_line 
+                "Montrons qu'on peut alors aboutir à une contradiction."
+
+        | IntroForall x ->
+            begin
+            match pl with
+            | [p] ->
+                add_line (Printf.sprintf "Soit %s." x);
+                aux p
+            | _ -> failwith "impossible"
+            end
+        | ElimForall(x, t) ->
+            let _, f = seq in
+            begin
+            match pl with
+            | [p] ->
+                add_line (Printf.sprintf "Montrons que pour tout %s, on a %s."
+                    x (Formula.rev_subst x t f |> string_of_formula));
+                incr level;
+                aux p;
+                decr level;
+                add_line (Printf.sprintf "Ainsi, on peut en déduire %s pour %s = %s."
+                    (string_of_formula f)
+                    x (string_of_term t))
+            | _ -> failwith "impossible"
+            end
+
+        | IntroExists t ->
+            let _, f = seq in
+            begin
+            match f with
+            | Exists(x, _) ->
+                add_line (Printf.sprintf "On pose %s = %s."
+                    x (string_of_term t));
+                incr level;
+                List.iter aux pl;
+                decr level
+            | _ -> failwith "impossible"
+            end
+        | ElimExists (x,f) ->
+            begin
+            match pl with
+            | [pex;p] ->
+                add_line (Printf.sprintf
+                    "On va montrer qu'il existe un %s tel que %s."
+                    x (string_of_formula f));
+                incr level;
+                aux pex;
+                decr level;
+                add_line (Printf.sprintf
+                    "On peut donc supposer %s."
+                    (string_of_formula f));
+                incr level;
+                aux p;
+                decr level
+            | _ -> failwith "impossible"
+            end
+
+        | Assume ->
+            let _, f = seq in
+            add_line 
+                (Printf.sprintf "On admet %s."
+                        (string_of_formula f))
+        | Classical ->
+            let _, f = seq in
+            add_line 
+                (Printf.sprintf "En vertu du tiers exclu, on a %s."
+                        (string_of_formula f))
+        | Peirce ->
+            let _, f = seq in
+            add_line
+                (Printf.sprintf "En vertu de la loi de Peirce, on a %s."
+                        (string_of_formula f))
+        | Axiom ->
+            let _, f = seq in
+            add_line
+                (Printf.sprintf "En vertu des hypothèses, on a %s."
+                    (string_of_formula f))
+
+        | _ -> ()
+    in 
+    aux p;
+    add_line "CQFD";
+    String.concat "\n"
+        (List.rev (List.of_seq (Stack.to_seq lines)))
 
 

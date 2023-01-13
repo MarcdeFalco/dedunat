@@ -14,11 +14,16 @@ Pour bien gérer l'unicode, il faut une version récente d'`OCaml` : >=4.14.
 Il s'agit d'une boucle interactive où on peut lancer des commandes (les
 mots-clés ne sont pas sensibles à la casse) :
 
+* `Help` pour l'aide
+* `Help connecteur` pour l'aide sur le connecteur
+* `Help intro` pour l'aide sur les introductions.
+* `Help elim` pour l'aide sur les eliminations.
 * `Prove formule` lance la preuve de la formule
 * `Qed` termine la preuve en cours si elle est bien achevée
 * `Print affiche la preuve, qu'elle soit achevée ou non, en ascii.
 * `LaTeX` affiche la preuve, qu'elle soit achevée ou non, en LaTeX avec 
   des commandes compatibles avec le paquet `busproofs.sty`
+* `French` affiche la preuve en français
 * `Intro operateur args` pour appliquer une règle d'introduction
     * Pas d'arguments pour `/\`, `->` et `~`
     * `Intro \/ left/right` pour l'opérande à préserver
@@ -37,7 +42,8 @@ mots-clés ne sont pas sensibles à la casse) :
     * `Elim -] x f` pour éliminer un il existe en faisant apparaitre `-]x.f`
 * `Axiom` pour appliquer une règle axiome
 * `Classical` pour appliquer le tiers exclu (avec contexte vide ou non)
-* `Pierce` pour appliquer la loi de Pierce (avec contexte vide ou non)
+* `Peirce` pour appliquer la loi de Peirce (avec contexte vide ou non)
+* `Assume` pour admettre le but
 * `Undo` pour annuler la dernière règle appliquée
 * `Auto` pour appliquer une introduction sur le symbole du nœud racine quand il
   n'y a pas d'arguments
