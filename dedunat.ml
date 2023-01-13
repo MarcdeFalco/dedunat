@@ -11,7 +11,7 @@ type env = {
 let help_elim op = 
     let open Formula in
     let sdash = if Config.is_ascii () then "|-" else "⊢" in
-    let sop = string_of_operator op in
+    let sop = PrettyPrinting.string_of_operator op in
     match op with
     | OpAnd ->
         "elim " ^ sop ^ " left B : Gamma " ^ sdash ^ " A => Gamma " ^ sdash
@@ -45,7 +45,7 @@ let help_elim op =
 let help_intro op = 
     let open Formula in
     let sdash = if Config.is_ascii () then "|-" else "⊢" in
-    let sop = string_of_operator op in
+    let sop = PrettyPrinting.string_of_operator op in
     match op with
     | OpAnd ->
         "intro " ^ sop ^ " : Gamma " ^ sdash ^ "A" ^ sop ^ "B => Gamma "
@@ -121,9 +121,9 @@ let make_prompt env =
                 String.concat "" 
                     (List.map (fun g' ->
                         Printf.sprintf "Remaining Goal : %s\n"
-                            (Deduction.string_of_sequent g')) goals')
+                            (PrettyPrinting.string_of_sequent g')) goals')
                     ^ Printf.sprintf "Goal : %s "
-                            (Deduction.string_of_sequent g))
+                            (PrettyPrinting.string_of_sequent g))
         ^ "> "
     in eval [ S prompt ]
 
@@ -201,11 +201,11 @@ let eval_tactic env s =
                 { previous_env = initial_env;
                   context = None }
             | Command.Print, Some c ->
-                out := Deduction.string_of_proof
+                out := PrettyPrinting.string_of_proof
                     (Deduction.proof_of_context c);
                 env
             | Command.LaTeX, Some c ->
-                out := Deduction.latex_of_proof
+                out := PrettyPrinting.latex_of_proof
                     (Deduction.proof_of_context c);
                 env
             | Command.HelpOp op, _ ->
