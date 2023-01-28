@@ -1,4 +1,2 @@
 let ascii = ref false
-
-let is_ascii () =
-    !ascii
+let is_ascii () = !ascii
