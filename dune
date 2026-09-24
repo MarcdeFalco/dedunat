@@ -1,3 +1,9 @@
+(library
+ (name dedunat_core)
+ (wrapped false)
+ (modules :standard \ dedunat))
+
 (executable
  (name dedunat)
- (libraries lwt lambda-term))
+ (modules dedunat)
+ (libraries dedunat_core lwt lambda-term))
