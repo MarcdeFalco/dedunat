@@ -145,7 +145,15 @@ let eval_tactic env s =
           }
       | Command.Define def, _ ->
           { env with previous_env = env; definitions = def :: env.definitions }
-      | _ -> env
+      | Command.Prove _, Some _ ->
+          out := "A proof is already in progress (Qed or Undo first).\n";
+          env
+      | Command.Qed, Some _ ->
+          out := "The proof is not finished.\n";
+          env
+      | _, None ->
+          out := "Nothing is being proved.\n";
+          env
     in
     (env, !out)
   with

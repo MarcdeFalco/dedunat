@@ -154,7 +154,8 @@
     background: var(--panel); color: var(--text);
     padding: .35rem .6rem; cursor: pointer;
   }
-  button:hover { border-color: var(--accent); }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   .row { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
   .row .label { color: var(--muted); font-size: .8rem; width: 100%; }
@@ -205,7 +206,7 @@
       <div id="log" aria-live="polite"></div>
       <form id="form" autocomplete="off">
         <input id="input" spellcheck="false" autocapitalize="off"
-               placeholder="Prove (A ∧ B) → (B ∧ A)" aria-label="Commande">
+               placeholder="Formule à prouver, ex. (A ∧ B) → (B ∧ A)" aria-label="Commande">
         <button class="primary" type="submit">Exécuter</button>
       </form>
 
@@ -288,7 +289,11 @@
     return div;
   }
 
-  const errors = /^(Error|Extra tokens|Rule can't|Nothing is being|Can't find)/;
+  const errors = /^(Error|Extra tokens|Rule can't|Nothing is being|Can't find|A proof is already|The proof is not)/;
+
+  // Commandes utilisables sans preuve en cours / sans but restant
+  const alwaysOk = ["help"];
+  const proofOk = ["print", "latex", "french", "undo", "qed"];
 
   function refresh() {
     const proof = d.proof();
@@ -305,6 +310,14 @@
         .map((g, i) => `<li class="${i === 0 ? "current" : ""}">${g}</li>`)
         .join("");
     }
+    document.querySelectorAll("[data-cmd]").forEach((b) => {
+      const cmd = b.dataset.cmd.trim();
+      b.disabled = !(alwaysOk.includes(cmd)
+        || (goals !== null && (proofOk.includes(cmd) || goals.length > 0)));
+    });
+    input.placeholder = goals === null
+      ? "Formule à prouver, ex. (A ∧ B) → (B ∧ A)"
+      : "Commande, ex. intro →";
   }
 
   function run(cmd) {
@@ -398,7 +411,7 @@
     refresh();
   });
 
-  addLog("Bienvenue dans Dedunat. Tapez « help » pour l'aide.", "ok");
+  addLog("Bienvenue dans Dedunat. Commencez par taper une formule à prouver (ou choisissez un exemple) ; « help » affiche l'aide.", "ok");
   refresh();
   input.focus();
 })();
