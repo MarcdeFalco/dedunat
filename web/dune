@@ -1,0 +1,13 @@
+(executable
+ (name dedunat_web)
+ (modes js)
+ (libraries dedunat_core js_of_ocaml)
+ (preprocess
+  (pps js_of_ocaml-ppx)))
+
+(rule
+ (alias web)
+ (targets dedunat.js)
+ (deps dedunat_web.bc.js index.html)
+ (action
+  (copy dedunat_web.bc.js dedunat.js)))

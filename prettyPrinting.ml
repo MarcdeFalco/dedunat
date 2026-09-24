@@ -98,6 +98,56 @@ let string_of_sequent (fl, f) =
   ^ (if Config.is_ascii () then " |- " else " ⊢ ")
   ^ string_of_formula f
 
+let ascii_string_of_rule r =
+  match r with
+  | ElimImplies _ -> "->e"
+  | IntroImplies -> "->i"
+  | ElimAnd (true, _) -> "/\\eg"
+  | ElimAnd (false, _) -> "/\\ed"
+  | IntroAnd -> "/\\i"
+  | IntroOr true -> "\\/ig"
+  | IntroOr false -> "\\/id"
+  | ElimOr _ -> "\\/e"
+  | ElimNot _ -> "~e"
+  | IntroNot -> "~i"
+  | IntroForall _ -> "\\-/i"
+  | ElimForall _ -> "\\-/e"
+  | IntroExists _ -> "-]i"
+  | ElimExists _ -> "-]e"
+  | ElimAbsurd -> "_|_e"
+  | Assume -> "!"
+  | Axiom -> "ax"
+  | Peirce -> "pi"
+  | Classical -> "cl"
+  | Unfinished -> "*"
+
+let unicode_string_of_rule r =
+  match r with
+  | ElimImplies _ -> "→e"
+  | IntroImplies -> "→i"
+  | ElimAnd (true, _) -> "∧eg"
+  | ElimAnd (false, _) -> "∧ed"
+  | IntroAnd -> "∧i"
+  | IntroOr true -> "∨ig"
+  | IntroOr false -> "∨id"
+  | ElimOr _ -> "∨e"
+  | ElimNot _ -> "¬e"
+  | IntroNot -> "¬i"
+  | IntroForall _ -> "∀i"
+  | ElimForall _ -> "∀e"
+  | IntroExists _ -> "∃i"
+  | ElimExists _ -> "∃e"
+  | ElimAbsurd -> "⟂e"
+  | Assume -> "!"
+  | Axiom -> "ax"
+  | Peirce -> "pi"
+  | Classical -> "cl"
+  | Unfinished -> "*"
+
+let string_of_rule r =
+  if Config.is_ascii () then ascii_string_of_rule r
+  else unicode_string_of_rule r
+
 let string_of_proof p =
   let add_spaces l =
     (* takes a list of string and add spaces left/right to get a matrix of strings *)
@@ -131,55 +181,6 @@ let string_of_proof p =
     | _ ->
         String.concat "  " (List.map List.hd ll) :: fusion (List.map List.tl ll)
   in
-  let auxr_ascii r =
-    match r with
-    | ElimImplies _ -> "->e"
-    | IntroImplies -> "->i"
-    | ElimAnd (true, _) -> "/\\eg"
-    | ElimAnd (false, _) -> "/\\ed"
-    | IntroAnd -> "/\\i"
-    | IntroOr true -> "\\/ig"
-    | IntroOr false -> "\\/id"
-    | ElimOr _ -> "\\/e"
-    | ElimNot _ -> "~e"
-    | IntroNot -> "~i"
-    | IntroForall _ -> "\\-/i"
-    | ElimForall _ -> "\\-/e"
-    | IntroExists _ -> "-]i"
-    | ElimExists _ -> "-]e"
-    | ElimAbsurd -> "_|_e"
-    | Assume -> "!"
-    | Axiom -> "ax"
-    | Peirce -> "pi"
-    | Classical -> "cl"
-    | Unfinished -> "*"
-  in
-  let auxr_unicode r =
-    match r with
-    | ElimImplies _ -> "→e"
-    | IntroImplies -> "→i"
-    | ElimAnd (true, _) -> "∧eg"
-    | ElimAnd (false, _) -> "∧ed"
-    | IntroAnd -> "∧i"
-    | IntroOr true -> "∨ig"
-    | IntroOr false -> "∨id"
-    | ElimOr _ -> "∨e"
-    | ElimNot _ -> "¬e"
-    | IntroNot -> "¬i"
-    | IntroForall _ -> "∀i"
-    | ElimForall _ -> "∀e"
-    | IntroExists _ -> "∃i"
-    | ElimExists _ -> "∃e"
-    | ElimAbsurd -> "⟂e"
-    | Assume -> "!"
-    | Axiom -> "ax"
-    | Peirce -> "pi"
-    | Classical -> "cl"
-    | Unfinished -> "*"
-  in
-
-  let auxr = if Config.is_ascii () then auxr_ascii else auxr_unicode in
-
   let rec aux (Inference (seq, pl, r)) =
     let sseq = string_of_sequent seq in
     let aux_pl = add_empty (List.map aux pl) in
@@ -191,7 +192,7 @@ let string_of_proof p =
     let sep =
       if r = Unfinished then
         U8string.make n (if Config.is_ascii () then "*" else "░")
-      else U8string.make n (if Config.is_ascii () then "-" else "─") ^ auxr r
+      else U8string.make n (if Config.is_ascii () then "-" else "─") ^ string_of_rule r
     in
     let l = sseq :: sep :: lpl in
     add_spaces l

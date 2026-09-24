@@ -9,6 +9,26 @@ installé, vous avez les dépendances et `dune build` suffit.
 
 Pour bien gérer l'unicode, il faut une version récente d'`OCaml` : >=4.14.
 
+## Version web
+
+Le cœur de l'assistant (bibliothèque `dedunat_core`) est partagé entre la
+version terminal et une version web compilée en JavaScript avec
+`js_of_ocaml` (dossier `web/`). Elle affiche l'arbre de preuve en direct, la
+liste des buts, une console acceptant les mêmes commandes, ainsi que des
+boutons pour les symboles et les règles.
+
+```
+opam install js_of_ocaml js_of_ocaml-ppx
+dune build --profile release @web/web
+```
+
+puis ouvrir `_build/default/web/index.html` dans un navigateur (les fichiers
+`index.html` et `dedunat.js` suffisent, aucun serveur n'est nécessaire).
+
+Le workflow `.github/workflows/pages.yml` publie automatiquement la version
+web sur GitHub Pages à chaque push sur `main` (il faut choisir « GitHub
+Actions » comme source dans *Settings → Pages* du dépôt).
+
 ## Utilisation
 
 Il s'agit d'une boucle interactive où on peut lancer des commandes (les

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dedunat</title>
+<style>
+  :root {
+    --bg: #f7f7f5;
+    --panel: #ffffff;
+    --text: #1d1d1f;
+    --muted: #6b6b70;
+    --border: #dcdcd8;
+    --accent: #2f5fd0;
+    --accent-soft: #e6edfb;
+    --open: #fff4d6;
+    --open-border: #d9a520;
+    --ok: #1f8a4c;
+    --err: #c0392b;
+    --mono: "JetBrains Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17181b;
+      --panel: #202226;
+      --text: #e8e8ea;
+      --muted: #9a9aa2;
+      --border: #34363c;
+      --accent: #7aa2ff;
+      --accent-soft: #263253;
+      --open: #3b3320;
+      --open-border: #c99a2e;
+      --ok: #4cc47f;
+      --err: #ff7b6b;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    padding: .75rem 1rem;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+  }
+  header h1 { font-size: 1.15rem; margin: 0; }
+  header .sub { color: var(--muted); font-size: .9rem; }
+  header .spacer { flex: 1; }
+  main {
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(320px, 3fr);
+    gap: 1rem;
+    padding: 1rem;
+    max-width: 1500px;
+    margin: 0 auto;
+  }
+  @media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); } }
+  section {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .75rem 1rem;
+    min-width: 0;
+  }
+  section h2 {
+    font-size: .8rem; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted); margin: 0 0 .5rem;
+  }
+  #proof-section { grid-column: 1 / -1; }
+  .col { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+
+  /* Arbre de preuve */
+  #proof {
+    overflow: auto;
+    padding: 1rem 2.5rem 1.5rem .5rem;
+    min-height: 8rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .92rem;
+  }
+  #proof .empty { color: var(--muted); font-family: inherit; }
+  .node {
+    display: inline-flex; flex-direction: column; align-items: center;
+    vertical-align: bottom;
+  }
+  .premises {
+    display: flex; align-items: flex-end; justify-content: center;
+    gap: 2.2em; padding: 0 .4em;
+  }
+  .bar {
+    align-self: stretch;
+    border-top: 1.5px solid var(--text);
+    position: relative;
+    margin: 3px 0;
+  }
+  .rule {
+    position: absolute; left: 100%; top: -.75em;
+    padding-left: .3em; font-size: .8em; color: var(--accent);
+    white-space: nowrap;
+  }
+  .node.open > .bar { border-top: 0; margin: 0; }
+  .sequent { white-space: nowrap; padding: 1px .35em; border-radius: 4px; }
+  .node.open > .sequent {
+    background: var(--open); border: 1px dashed var(--open-border);
+  }
+  .node.current > .sequent {
+    border-style: solid; border-width: 2px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--open-border) 25%, transparent);
+  }
+  .hyps { color: var(--muted); }
+  .dash { color: var(--accent); }
+
+  /* Buts */
+  #goals { margin: 0; padding: 0; list-style: none; font-family: var(--mono); }
+  #goals li {
+    padding: .35rem .5rem; border-radius: 5px; margin-bottom: .25rem;
+    overflow-x: auto; white-space: nowrap;
+  }
+  #goals li.current { background: var(--accent-soft); font-weight: 600; }
+  #goals .none { color: var(--muted); font-family: system-ui, sans-serif; }
+  #goals .done { color: var(--ok); font-family: system-ui, sans-serif; }
+
+  /* Console */
+  #log {
+    font-family: var(--mono); font-size: .85rem;
+    height: 22rem; overflow: auto;
+    background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+    padding: .5rem; margin-bottom: .5rem; white-space: pre-wrap; word-break: break-word;
+  }
+  #log .cmd { color: var(--accent); }
+  #log .cmd::before { content: "> "; color: var(--muted); }
+  #log .err { color: var(--err); }
+  #log .ok { color: var(--ok); }
+  #log .out { position: relative; }
+  #log .copy {
+    position: absolute; top: 0; right: 0; font-size: .75rem; padding: .1rem .4rem;
+  }
+  form { display: flex; gap: .5rem; }
+  #input {
+    flex: 1; min-width: 0;
+    font: 1rem var(--mono);
+    padding: .5rem .6rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--panel); color: var(--text);
+  }
+  #input:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  button, select {
+    font: inherit; font-size: .9rem;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: var(--panel); color: var(--text);
+    padding: .35rem .6rem; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .row { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
+  .row .label { color: var(--muted); font-size: .8rem; width: 100%; }
+  .sym { font-family: var(--mono); min-width: 2.2rem; }
+  .hint { color: var(--muted); font-size: .8rem; margin-top: .5rem; }
+  kbd {
+    font: .75rem var(--mono); border: 1px solid var(--border);
+    border-bottom-width: 2px; border-radius: 3px; padding: 0 .25rem;
+  }
+  label.toggle { display: inline-flex; gap: .35rem; align-items: center; font-size: .9rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Dedunat</h1>
+  <span class="sub">Assistant de preuve minimaliste pour la déduction naturelle</span>
+  <span class="spacer"></span>
+  <select id="examples" aria-label="Exemples">
+    <option value="">Exemples…</option>
+    <option>(A ∧ B) → (B ∧ A)</option>
+    <option>(¬A ∧ ¬B) → ¬(A ∨ B)</option>
+    <option>(A → B) → (¬B → ¬A)</option>
+    <option>A ∨ ¬A</option>
+    <option>¬¬A → A</option>
+    <option>((A → B) → A) → A</option>
+    <option>(∀x. P(x)) → (∃x. P(x))</option>
+    <option>(∃x. ∀y. R(x, y)) → (∀y. ∃x. R(x, y))</option>
+  </select>
+  <label class="toggle"><input type="checkbox" id="ascii"> ASCII</label>
+</header>
+
+<main>
+  <section id="proof-section">
+    <h2>Arbre de preuve</h2>
+    <div id="proof"><span class="empty">Aucune preuve en cours. Tapez une formule (ou <code>Prove formule</code>) dans la console, ou choisissez un exemple.</span></div>
+  </section>
+
+  <div class="col">
+    <section>
+      <h2>Buts</h2>
+      <ul id="goals"><li class="none">Rien à prouver.</li></ul>
+    </section>
+  </div>
+
+  <div class="col">
+    <section>
+      <h2>Console</h2>
+      <div id="log" aria-live="polite"></div>
+      <form id="form" autocomplete="off">
+        <input id="input" spellcheck="false" autocapitalize="off"
+               placeholder="Prove (A ∧ B) → (B ∧ A)" aria-label="Commande">
+        <button class="primary" type="submit">Exécuter</button>
+      </form>
+
+      <div class="row" id="symbols">
+        <span class="label">Symboles</span>
+        <button class="sym" data-sym="→">→</button>
+        <button class="sym" data-sym="∧">∧</button>
+        <button class="sym" data-sym="∨">∨</button>
+        <button class="sym" data-sym="¬">¬</button>
+        <button class="sym" data-sym="⟂">⟂</button>
+        <button class="sym" data-sym="∀">∀</button>
+        <button class="sym" data-sym="∃">∃</button>
+        <button class="sym" data-sym="⊢">⊢</button>
+      </div>
+
+      <div class="row">
+        <span class="label">Introductions</span>
+        <button data-cmd="intro →">intro →</button>
+        <button data-cmd="intro ∧">intro ∧</button>
+        <button data-cmd="intro ∨ left">intro ∨ left</button>
+        <button data-cmd="intro ∨ right">intro ∨ right</button>
+        <button data-cmd="intro ¬">intro ¬</button>
+        <button data-cmd="intro ∀ " data-args>intro ∀ x</button>
+        <button data-cmd="intro ∃ " data-args>intro ∃ t</button>
+      </div>
+      <div class="row">
+        <span class="label">Éliminations</span>
+        <button data-cmd="elim → " data-args>elim → A</button>
+        <button data-cmd="elim ∧ left " data-args>elim ∧ left B</button>
+        <button data-cmd="elim ∧ right " data-args>elim ∧ right B</button>
+        <button data-cmd="elim ∨ " data-args>elim ∨ A, B</button>
+        <button data-cmd="elim ¬ " data-args>elim ¬ A</button>
+        <button data-cmd="elim ⟂">elim ⟂</button>
+        <button data-cmd="elim ∀ " data-args>elim ∀ x t</button>
+        <button data-cmd="elim ∃ " data-args>elim ∃ x A</button>
+      </div>
+      <div class="row">
+        <span class="label">Autres</span>
+        <button data-cmd="axiom">Axiom</button>
+        <button data-cmd="auto">Auto</button>
+        <button data-cmd="classical">Classical</button>
+        <button data-cmd="peirce">Peirce</button>
+        <button data-cmd="assume">Assume</button>
+        <button data-cmd="undo">Undo</button>
+        <button data-cmd="qed">Qed</button>
+      </div>
+      <div class="row">
+        <span class="label">Affichage</span>
+        <button data-cmd="print">Print</button>
+        <button data-cmd="latex">LaTeX</button>
+        <button data-cmd="french">Français</button>
+        <button data-cmd="help">Aide</button>
+      </div>
+      <p class="hint">
+        <kbd>Tab</kbd> fait défiler les symboles → ∧ ∨ ¬ ⟂ ∀ ∃ ;
+        <kbd>↑</kbd> <kbd>↓</kbd> parcourent l'historique.
+        On peut aussi taper <code>-&gt; /\ \/ ~ _|_ \-/ -] |-</code>
+        ou <code>\land \lor…</code>
+      </p>
+    </section>
+  </div>
+</main>
+
+<script src="dedunat.js"></script>
+<script>
+(() => {
+  const d = window.dedunat;
+  const $ = (id) => document.getElementById(id);
+  const log = $("log"), input = $("input"), proofEl = $("proof"), goalsEl = $("goals");
+  const history = [];
+  let histPos = 0;
+
+  function addLog(text, cls) {
+    if (!text) return;
+    const div = document.createElement("div");
+    div.className = cls;
+    div.textContent = text.replace(/\n+$/, "");
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+    return div;
+  }
+
+  const errors = /^(Error|Extra tokens|Rule can't|Nothing is being|Can't find)/;
+
+  function refresh() {
+    const proof = d.proof();
+    proofEl.innerHTML = proof === null
+      ? '<span class="empty">Aucune preuve en cours. Tapez une formule (ou <code>Prove formule</code>) dans la console, ou choisissez un exemple.</span>'
+      : proof;
+    const goals = d.goals();
+    if (goals === null) {
+      goalsEl.innerHTML = '<li class="none">Rien à prouver.</li>';
+    } else if (goals.length === 0) {
+      goalsEl.innerHTML = '<li class="done">✓ Plus aucun but : la preuve est complète. Tapez <code>Qed</code> pour la valider.</li>';
+    } else {
+      goalsEl.innerHTML = goals
+        .map((g, i) => `<li class="${i === 0 ? "current" : ""}">${g}</li>`)
+        .join("");
+    }
+  }
+
+  function run(cmd) {
+    cmd = cmd.trim();
+    if (!cmd) return;
+    history.push(cmd);
+    histPos = history.length;
+    addLog(cmd, "cmd");
+    const r = d.exec(cmd);
+    if (r.quit) {
+      d.reset();
+      addLog("Session réinitialisée.", "ok");
+    }
+    const out = r.output;
+    if (out) {
+      const div = addLog(out, errors.test(out) ? "err" : "out");
+      if (/^(latex|print|french)\b/i.test(cmd) && navigator.clipboard) {
+        const b = document.createElement("button");
+        b.className = "copy"; b.textContent = "Copier";
+        b.onclick = () => navigator.clipboard.writeText(out).then(() => b.textContent = "Copié");
+        div.appendChild(b);
+      }
+    }
+    if (r.finished) addLog("Preuve terminée. CQFD.", "ok");
+    refresh();
+  }
+
+  $("form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    run(input.value);
+    input.value = "";
+  });
+
+  function insertAtCursor(text) {
+    const s = input.selectionStart ?? input.value.length;
+    const e = input.selectionEnd ?? input.value.length;
+    input.value = input.value.slice(0, s) + text + input.value.slice(e);
+    input.selectionStart = input.selectionEnd = s + text.length;
+    input.focus();
+  }
+
+  // Tab : même comportement que la version terminal
+  const cycle = ["→", "∧", "∨", "¬", "⟂", "∀", "∃"];
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Tab" && !d.isAscii()) {
+      e.preventDefault();
+      const pos = input.selectionStart;
+      const prev = input.value.slice(0, pos);
+      const i = cycle.indexOf(prev.slice(-1));
+      if (i < 0) insertAtCursor(cycle[0]);
+      else {
+        const next = i === cycle.length - 1 ? "" : cycle[i + 1];
+        input.value = prev.slice(0, -1) + next + input.value.slice(pos);
+        input.selectionStart = input.selectionEnd = pos - 1 + next.length;
+      }
+    } else if (e.key === "ArrowUp" && histPos > 0) {
+      e.preventDefault();
+      input.value = history[--histPos];
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      histPos = Math.min(histPos + 1, history.length);
+      input.value = history[histPos] ?? "";
+    }
+  });
+
+  document.querySelectorAll("[data-sym]").forEach((b) =>
+    b.addEventListener("click", () => insertAtCursor(b.dataset.sym)));
+
+  document.querySelectorAll("[data-cmd]").forEach((b) =>
+    b.addEventListener("click", () => {
+      if (b.hasAttribute("data-args")) {
+        input.value = b.dataset.cmd;
+        input.focus();
+      } else {
+        run(b.dataset.cmd);
+        input.focus();
+      }
+    }));
+
+  $("examples").addEventListener("change", (e) => {
+    const f = e.target.value;
+    e.target.value = "";
+    if (!f) return;
+    d.reset();
+    log.innerHTML = "";
+    run("Prove " + f);
+  });
+
+  $("ascii").addEventListener("change", (e) => {
+    d.setAscii(e.target.checked);
+    refresh();
+  });
+
+  addLog("Bienvenue dans Dedunat. Tapez « help » pour l'aide.", "ok");
+  refresh();
+  input.focus();
+})();
+</script>
+</body>
+</html>
