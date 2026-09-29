@@ -82,6 +82,10 @@
     font-family: var(--mono);
     font-size: .92rem;
   }
+  #proof .banner {
+    font-family: system-ui, sans-serif; color: var(--ok);
+    text-align: left; margin-bottom: 1rem;
+  }
   #proof .empty { color: var(--muted); font-family: inherit; }
   .node {
     display: inline-flex; flex-direction: column; align-items: center;
@@ -121,6 +125,7 @@
     overflow-x: auto; white-space: nowrap;
   }
   #goals li.current { background: var(--accent-soft); font-weight: 600; }
+  #goals li.none, #goals li.done { white-space: normal; }
   #goals .none { color: var(--muted); font-family: system-ui, sans-serif; }
   #goals .done { color: var(--ok); font-family: system-ui, sans-serif; }
 
@@ -154,7 +159,8 @@
     background: var(--panel); color: var(--text);
     padding: .35rem .6rem; cursor: pointer;
   }
-  button:hover { border-color: var(--accent); }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
   button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   .row { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .5rem; }
   .row .label { color: var(--muted); font-size: .8rem; width: 100%; }
@@ -165,6 +171,47 @@
     border-bottom-width: 2px; border-radius: 3px; padding: 0 .25rem;
   }
   label.toggle { display: inline-flex; gap: .35rem; align-items: center; font-size: .9rem; }
+
+  /* Documentation */
+  #doc {
+    margin: 0 max(1rem, calc((100% - 1468px) / 2)) 2rem;
+    padding: 1rem 1.5rem;
+  }
+  #doc h2 { font-size: 1rem; }
+  #doc h3 { font-size: 1.05rem; margin: 1.6rem 0 .5rem; }
+  #doc p, #doc li { max-width: 75ch; }
+  #doc .muted { color: var(--muted); }
+  #doc code, #doc var { font-family: var(--mono); font-size: .9em; }
+  .doc-table { border-collapse: collapse; width: 100%; max-width: 900px; display: block; overflow-x: auto; }
+  .doc-table th, .doc-table td {
+    text-align: left; padding: .35rem .7rem; border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .doc-table th { color: var(--muted); font-weight: 600; font-size: .85rem; }
+  .rules {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    grid-auto-flow: dense;
+    gap: .75rem;
+  }
+  .rule-card {
+    border: 1px solid var(--border); border-radius: 8px; padding: .6rem .75rem;
+    display: flex; flex-direction: column; gap: .6rem; min-width: 0;
+  }
+  .rule-card.wide { grid-column: span 2; }
+  @media (max-width: 600px) { .rule-card.wide { grid-column: auto; } }
+  .rule-card .schema {
+    text-align: center; font-family: var(--mono); font-size: .88rem;
+    overflow-x: auto; padding: .3rem 1.8rem .2rem 0;
+  }
+  .rule-card .cmd { font-family: var(--mono); color: var(--accent); font-size: .9rem; }
+  .rule-card .note { color: var(--muted); font-size: .82rem; }
+  .example {
+    font-family: var(--mono); font-size: .85rem; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px; padding: .6rem .8rem;
+    overflow-x: auto;
+  }
+  header a { color: var(--accent); text-decoration: none; font-size: .9rem; }
+  header a:hover { text-decoration: underline; }
 </style>
 </head>
 <body>
@@ -183,13 +230,14 @@
     <option>(∀x. P(x)) → (∃x. P(x))</option>
     <option>(∃x. ∀y. R(x, y)) → (∀y. ∃x. R(x, y))</option>
   </select>
+  <a href="#doc">Documentation</a>
   <label class="toggle"><input type="checkbox" id="ascii"> ASCII</label>
 </header>
 
 <main>
   <section id="proof-section">
     <h2>Arbre de preuve</h2>
-    <div id="proof"><span class="empty">Aucune preuve en cours. Tapez une formule (ou <code>Prove formule</code>) dans la console, ou choisissez un exemple.</span></div>
+    <div id="proof"></div>
   </section>
 
   <div class="col">
@@ -205,7 +253,7 @@
       <div id="log" aria-live="polite"></div>
       <form id="form" autocomplete="off">
         <input id="input" spellcheck="false" autocapitalize="off"
-               placeholder="Prove (A ∧ B) → (B ∧ A)" aria-label="Commande">
+               placeholder="Formule à prouver, ex. (A ∧ B) → (B ∧ A)" aria-label="Commande">
         <button class="primary" type="submit">Exécuter</button>
       </form>
 
@@ -269,6 +317,104 @@
   </div>
 </main>
 
+<section id="doc">
+  <h2>Documentation</h2>
+
+  <h3>Principe</h3>
+  <p>
+    Dedunat construit une preuve en <strong>déduction naturelle</strong> de bas
+    en haut. On part du séquent à prouver, par exemple <code>⊢ (A ∧ B) → (B ∧ A)</code>,
+    puis on applique des règles. Chaque règle remplace le <em>but courant</em>
+    (encadré dans l'arbre, en tête de la liste des buts) par zéro, un ou
+    plusieurs sous-buts. Quand il ne reste plus aucun but, la preuve est
+    complète : <code>Qed</code> la valide. Elle reste alors affichée et
+    exportable jusqu'à ce qu'on tape une nouvelle formule.
+  </p>
+  <ol>
+    <li>Tapez une formule (ou <code>Prove formule</code>) dans la console, ou choisissez un exemple.</li>
+    <li>Appliquez des règles avec les boutons ou en tapant les commandes ci-dessous.</li>
+    <li><code>Undo</code> annule la dernière étape ; <code>Auto</code> applique l'introduction évidente.</li>
+    <li><code>Qed</code> valide, puis <code>Print</code>, <code>LaTeX</code> ou <code>Français</code> exportent la preuve.</li>
+  </ol>
+
+  <h3>Écrire des formules</h3>
+  <table class="doc-table">
+    <thead><tr><th>Connecteur</th><th>Unicode</th><th>ASCII</th><th>LaTeX</th></tr></thead>
+    <tbody>
+      <tr><td>Implication</td><td>→</td><td><code>-&gt;</code></td><td><code>\to</code></td></tr>
+      <tr><td>Conjonction</td><td>∧</td><td><code>/\</code></td><td><code>\land</code></td></tr>
+      <tr><td>Disjonction</td><td>∨</td><td><code>\/</code></td><td><code>\lor</code></td></tr>
+      <tr><td>Négation</td><td>¬</td><td><code>~</code></td><td><code>\neg</code></td></tr>
+      <tr><td>Absurde</td><td>⟂</td><td><code>_|_</code></td><td><code>\bot</code></td></tr>
+      <tr><td>Pour tout</td><td>∀x. …</td><td><code>\-/x. …</code></td><td><code>\forall x. …</code></td></tr>
+      <tr><td>Il existe</td><td>∃x. …</td><td><code>-]x. …</code></td><td><code>\exists x. …</code></td></tr>
+      <tr><td>Thèse (séquent)</td><td>⊢</td><td><code>|-</code></td><td><code>\vdash</code></td></tr>
+    </tbody>
+  </table>
+  <ul>
+    <li>Variables propositionnelles : <code>A</code>, <code>B</code>… ;
+      prédicats et termes : <code>P(x)</code>, <code>R(x, f(y))</code>.</li>
+    <li>¬ est prioritaire, puis ∧ et ∨ (même niveau, associatifs à droite :
+      <code>A ∧ B ∨ C</code> se lit <code>A ∧ (B ∨ C)</code>), puis → (associatif à droite).
+      En cas de doute, mettez des parenthèses.</li>
+    <li>Un quantificateur porte sur tout ce qui suit : <code>∀x. P(x) → Q(x)</code>
+      se lit <code>∀x. (P(x) → Q(x))</code>.</li>
+    <li>Un séquent avec hypothèses s'écrit <code>A, A → B ⊢ B</code>.</li>
+    <li>Les mots-clés ne sont pas sensibles à la casse.</li>
+  </ul>
+
+  <h3>Règles</h3>
+  <p class="muted">
+    Γ désigne les hypothèses. Chaque schéma se lit de bas en haut : la
+    commande transforme le but du bas en les sous-buts du haut. Les
+    arguments en <var>italique</var> sont à fournir.
+  </p>
+  <div id="rules" class="rules"></div>
+
+  <h3>Autres commandes</h3>
+  <table class="doc-table">
+    <tbody>
+      <tr><td><code>axiom</code></td><td>Ferme le but <code>Γ ⊢ A</code> lorsque <code>A</code> est une hypothèse de Γ (à α-équivalence près).</td></tr>
+      <tr><td><code>auto</code></td><td>Applique l'introduction du connecteur principal du but quand elle ne demande pas d'argument (→, ∧, ¬, ∀).</td></tr>
+      <tr><td><code>classical</code></td><td>Tiers exclu : ferme un but de la forme <code>A ∨ ¬A</code> ou <code>¬A ∨ A</code>.</td></tr>
+      <tr><td><code>peirce</code></td><td>Loi de Peirce : ferme un but de la forme <code>((A → B) → A) → A</code>.</td></tr>
+      <tr><td><code>assume</code></td><td>Admet le but courant (noté <code>!</code> dans l'arbre).</td></tr>
+      <tr><td><code>undo</code></td><td>Annule la dernière commande (y compris <code>Qed</code>).</td></tr>
+      <tr><td><code>qed</code></td><td>Valide la preuve quand il ne reste plus de but.</td></tr>
+      <tr><td><code>print</code>, <code>latex</code>, <code>french</code></td><td>Affichent la preuve (en cours ou dernière validée) en texte, en LaTeX
+        (paquet <code>bussproofs</code>) ou rédigée en français.</td></tr>
+      <tr><td><code>define R n formule</code></td><td>Définit le prédicat <code>R</code> d'arité <code>n</code> ; ses arguments sont notés
+        <code>V1</code>, …, <code>Vn</code> dans la formule. Ex. : <code>define Sym 1 ∀y. (R(V1, y) → R(y, V1))</code>.</td></tr>
+      <tr><td><code>unroll</code></td><td>Remplace dans le but courant les prédicats définis par leur définition.</td></tr>
+      <tr><td><code>help</code>, <code>help intro</code>, <code>help elim</code>, <code>help ∧</code>…</td><td>Aide en ligne dans la console.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Exemple</h3>
+  <p>Preuve de <code>(A ∧ B) → (B ∧ A)</code> :</p>
+  <pre class="example">(A ∧ B) → (B ∧ A)     ⊢ (A ∧ B) → (B ∧ A)
+intro →               A ∧ B ⊢ B ∧ A
+intro ∧               deux buts : A ∧ B ⊢ B  et  A ∧ B ⊢ A
+elim ∧ right A        A ∧ B ⊢ A ∧ B
+axiom                 reste A ∧ B ⊢ A
+elim ∧ left B         A ∧ B ⊢ A ∧ B
+axiom                 plus de but
+qed</pre>
+
+  <h3>Clavier</h3>
+  <ul>
+    <li><kbd>Entrée</kbd> exécute la commande ; <kbd>↑</kbd> / <kbd>↓</kbd> parcourent l'historique.</li>
+    <li><kbd>Tab</kbd> insère → puis, à chaque nouvel appui, le remplace par ∧, ∨, ¬, ⟂, ∀, ∃.</li>
+    <li>Les boutons de règles qui attendent un argument pré-remplissent la console ; complétez puis <kbd>Entrée</kbd>.</li>
+  </ul>
+
+  <h3>Limites</h3>
+  <p class="muted">
+    Les conditions sur les variables libres des règles ∀i et ∃e ne sont pas
+    vérifiées : c'est à vous de choisir des variables fraîches.
+  </p>
+</section>
+
 <script src="dedunat.js"></script>
 <script>
 (() => {
@@ -288,16 +434,26 @@
     return div;
   }
 
-  const errors = /^(Error|Extra tokens|Rule can't|Nothing is being|Can't find)/;
+  const errors = /^(Error|Extra tokens|Rule can't|Nothing is being|Can't find|A proof is already|The proof is not)/;
+
+  // Commandes utilisables sans preuve en cours / sans but restant
+  const alwaysOk = ["help"];
+  const proofOk = ["print", "latex", "french", "undo", "qed"];
+  const exportOk = ["print", "latex", "french", "undo"];
+
+  const emptyProof = '<span class="empty">Aucune preuve en cours. Tapez une formule dans la console, ou choisissez un exemple.</span>';
 
   function refresh() {
     const proof = d.proof();
-    proofEl.innerHTML = proof === null
-      ? '<span class="empty">Aucune preuve en cours. Tapez une formule (ou <code>Prove formule</code>) dans la console, ou choisissez un exemple.</span>'
-      : proof;
+    const done = d.proofDone();
+    proofEl.innerHTML = proof === null ? emptyProof
+      : (done ? '<div class="banner">✓ Preuve validée. Elle reste affichée (et exportable avec Print, LaTeX ou Français) jusqu\'à la prochaine formule.</div>' : "")
+        + proof;
     const goals = d.goals();
     if (goals === null) {
-      goalsEl.innerHTML = '<li class="none">Rien à prouver.</li>';
+      goalsEl.innerHTML = done
+        ? '<li class="done">✓ Preuve validée. Tapez une nouvelle formule pour commencer une autre preuve.</li>'
+        : '<li class="none">Rien à prouver.</li>';
     } else if (goals.length === 0) {
       goalsEl.innerHTML = '<li class="done">✓ Plus aucun but : la preuve est complète. Tapez <code>Qed</code> pour la valider.</li>';
     } else {
@@ -305,6 +461,15 @@
         .map((g, i) => `<li class="${i === 0 ? "current" : ""}">${g}</li>`)
         .join("");
     }
+    document.querySelectorAll("[data-cmd]").forEach((b) => {
+      const cmd = b.dataset.cmd.trim();
+      b.disabled = !(alwaysOk.includes(cmd)
+        || (done && exportOk.includes(cmd))
+        || (goals !== null && (proofOk.includes(cmd) || goals.length > 0)));
+    });
+    input.placeholder = goals === null
+      ? "Formule à prouver, ex. (A ∧ B) → (B ∧ A)"
+      : "Commande, ex. intro →";
   }
 
   function run(cmd) {
@@ -328,7 +493,7 @@
         div.appendChild(b);
       }
     }
-    if (r.finished) addLog("Preuve terminée. CQFD.", "ok");
+    if (r.finished) addLog("Preuve validée. CQFD.", "ok");
     refresh();
   }
 
@@ -398,7 +563,43 @@
     refresh();
   });
 
-  addLog("Bienvenue dans Dedunat. Tapez « help » pour l'aide.", "ok");
+
+  // Schémas des règles pour la documentation (de bas en haut)
+  const rules = [
+    ["intro →", "→i", ["Γ, A ⊢ B"], "Γ ⊢ A → B"],
+    ["elim → <var>A</var>", "→e", ["Γ ⊢ A → B", "Γ ⊢ A"], "Γ ⊢ B"],
+    ["intro ∧", "∧i", ["Γ ⊢ A", "Γ ⊢ B"], "Γ ⊢ A ∧ B"],
+    ["elim ∧ left <var>B</var>", "∧eg", ["Γ ⊢ A ∧ B"], "Γ ⊢ A"],
+    ["elim ∧ right <var>A</var>", "∧ed", ["Γ ⊢ A ∧ B"], "Γ ⊢ B"],
+    ["intro ∨ left", "∨ig", ["Γ ⊢ A"], "Γ ⊢ A ∨ B"],
+    ["intro ∨ right", "∨id", ["Γ ⊢ B"], "Γ ⊢ A ∨ B"],
+    ["elim ∨ <var>A</var>, <var>B</var>", "∨e", ["Γ ⊢ A ∨ B", "Γ, A ⊢ C", "Γ, B ⊢ C"], "Γ ⊢ C"],
+    ["intro ¬", "¬i", ["Γ, A ⊢ ⟂"], "Γ ⊢ ¬A"],
+    ["elim ¬ <var>A</var>", "¬e", ["Γ ⊢ A", "Γ ⊢ ¬A"], "Γ ⊢ ⟂"],
+    ["elim ⟂", "⟂e", ["Γ ⊢ ⟂"], "Γ ⊢ A"],
+    ["intro ∀ <var>y</var>", "∀i", ["Γ ⊢ A[x:=y]"], "Γ ⊢ ∀x. A",
+      "renomme la variable liée en y (qui doit être fraîche)"],
+    ["elim ∀ <var>x</var> <var>t</var>", "∀e", ["Γ ⊢ ∀x. A"], "Γ ⊢ A[x:=t]",
+      "les occurrences de t dans le but deviennent x"],
+    ["intro ∃ <var>t</var>", "∃i", ["Γ ⊢ A[x:=t]"], "Γ ⊢ ∃x. A",
+      "t est le témoin"],
+    ["elim ∃ <var>x</var> <var>A</var>", "∃e", ["Γ ⊢ ∃x. A", "Γ, A ⊢ B"], "Γ ⊢ B",
+      "x ne doit pas être libre dans Γ ni B"],
+  ];
+  const esc = (t) => t.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+  const leaf = (t) => `<div class="node"><div class="sequent">${esc(t)}</div></div>`;
+  $("rules").innerHTML = rules.map(([cmd, name, prem, concl, note]) => `
+    <div class="rule-card${prem.length > 2 ? " wide" : ""}">
+      <div class="cmd">${cmd}</div>
+      <div class="schema"><div class="node">
+        <div class="premises">${prem.map(leaf).join("")}</div>
+        <div class="bar"><span class="rule">${name}</span></div>
+        <div class="sequent">${esc(concl)}</div>
+      </div></div>
+      ${note ? `<div class="note">${note}</div>` : ""}
+    </div>`).join("");
+
+  addLog("Bienvenue dans Dedunat. Commencez par taper une formule à prouver (ou choisissez un exemple) ; « help » affiche l'aide.", "ok");
   refresh();
   input.focus();
 })();
