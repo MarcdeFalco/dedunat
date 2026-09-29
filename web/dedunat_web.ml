@@ -90,10 +90,17 @@ let goals () =
            (Array.of_list
               (List.map (fun g -> Js.string (html_of_sequent g)) gl)))
 
+(* Preuve en cours, ou à défaut la dernière preuve validée par Qed *)
 let proof () =
-  match !env.Engine.context with
-  | None -> Js.null
-  | Some c -> Js.some (Js.string (html_of_proof (proof_of_context c)))
+  match (!env.Engine.context, !env.Engine.last_proof) with
+  | Some c, _ -> Js.some (Js.string (html_of_proof (proof_of_context c)))
+  | None, Some p -> Js.some (Js.string (html_of_proof p))
+  | None, None -> Js.null
+
+let proof_done () =
+  match (!env.Engine.context, !env.Engine.last_proof) with
+  | None, Some _ -> Js._true
+  | _ -> Js._false
 
 let reset () = env := Engine.initial_env
 
@@ -103,6 +110,7 @@ let () =
       method exec line = exec line
       method goals = goals ()
       method proof = proof ()
+      method proofDone = proof_done ()
       method reset = reset ()
       method setAscii b = Config.ascii := Js.to_bool b
       method isAscii = Js.bool (Config.is_ascii ())

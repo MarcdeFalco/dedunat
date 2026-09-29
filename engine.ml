@@ -2,6 +2,8 @@ type env = {
   previous_env : env;
   definitions : Formula.definition list;
   context : Deduction.context option;
+  last_proof : Deduction.proof option;
+      (* last proof closed with Qed, still available for Print/LaTeX/French *)
 }
 
 let help_elim op =
@@ -74,7 +76,12 @@ let help_elims =
        [ OpAnd; OpOr; OpImplies; OpNot; OpForall; OpExists; OpAbsurd ])
 
 let rec initial_env =
-  { previous_env = initial_env; definitions = []; context = None }
+  {
+    previous_env = initial_env;
+    definitions = [];
+    context = None;
+    last_proof = None;
+  }
 
 exception Quit
 
@@ -90,8 +97,8 @@ let eval_tactic env s =
           env
       | Command.ApplyRule r, Some c ->
           {
+            env with
             previous_env = env;
-            definitions = env.definitions;
             context = Some (Deduction.apply_rule r c);
           }
       | Command.Auto, Some c -> (
@@ -101,19 +108,25 @@ let eval_tactic env s =
               env
           | Some r ->
               {
+                env with
                 previous_env = env;
-                definitions = env.definitions;
                 context = Some (Deduction.apply_rule r c);
               })
       | Command.Undo, _ -> env.previous_env
       | Command.Prove seq, None ->
           {
+            env with
             previous_env = env;
-            definitions = env.definitions;
             context = Some (Deduction.initial_context seq);
+            last_proof = None;
           }
-      | Command.Qed, Some ([], _) ->
-          { previous_env = env; definitions = env.definitions; context = None }
+      | Command.Qed, Some (([], _) as c) ->
+          {
+            env with
+            previous_env = env;
+            context = None;
+            last_proof = Some (Deduction.proof_of_context c);
+          }
       | Command.Print, Some c ->
           out := PrettyPrinting.string_of_proof (Deduction.proof_of_context c);
           env
@@ -150,6 +163,15 @@ let eval_tactic env s =
           env
       | Command.Qed, Some _ ->
           out := "The proof is not finished.\n";
+          env
+      | Command.Print, None when env.last_proof <> None ->
+          out := PrettyPrinting.string_of_proof (Option.get env.last_proof);
+          env
+      | Command.LaTeX, None when env.last_proof <> None ->
+          out := PrettyPrinting.latex_of_proof (Option.get env.last_proof);
+          env
+      | Command.French, None when env.last_proof <> None ->
+          out := PrettyPrinting.frenchmath_of_proof (Option.get env.last_proof);
           env
       | _, None ->
           out := "Nothing is being proved.\n";
